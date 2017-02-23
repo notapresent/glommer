@@ -1,3 +1,6 @@
+IP ?= 127.0.0.1
+PORT ?= 8080
+
 createuser:
 	psql -c "CREATE USER glommer WITH PASSWORD 'glommer';" postgres postgres
 
@@ -14,7 +17,7 @@ requirements:
 	pip-compile --output-file requirements.txt requirements.in
 
 serve:
-	python manage.py runserver $(C9_IP):$(C9_PORT)
+	python manage.py runserver $(IP):$(PORT)
 
 pgweb:
 	pgweb --bind=$(C9_IP) --url $(DATABASE_URL) --skip-open
