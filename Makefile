@@ -13,3 +13,5 @@ requirements:
 serve:
 	python manage.py runserver $(C9_IP):$(C9_PORT)
 
+pgweb:
+	pgweb --bind=$(C9_IP) --url $(DATABASE_URL) --skip-open
