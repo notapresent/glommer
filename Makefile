@@ -9,3 +9,7 @@ dropdb:
 
 requirements:
 	pip-compile --output-file requirements.txt requirements.in
+
+serve:
+	python manage.py runserver $(C9_IP):$(C9_PORT)
+
