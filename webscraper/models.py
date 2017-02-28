@@ -7,7 +7,10 @@ class Channel(Model):
     url = CharField(max_length=2048)
     selector = CharField(max_length=512)
     title = CharField(max_length=512)
-    adapters = ArrayField(base_field=JSONField(), default=list)      # [{'adapter_name': {/* adapter settings*/}}, ...]
+    extractors = JSONField(null=False, default=dict)        # TODO: Document this structure
+
+    def __str__(self):
+        return self.title
 
 
 class Entry(Model):
@@ -17,4 +20,8 @@ class Entry(Model):
     title = CharField(max_length=512)
     url = CharField(max_length=2048)    # url as seen in channel
     final_url = CharField(max_length=2048, null=True)   # url after all redirects etc, null if equals to original url
-    items = JSONField(null=True)        # {'adapter_name': {/* items */}, ...}
+    items = JSONField(null=True)        # TODO: Document this structure
+
+    def __str__(self):
+        return self.title
+
