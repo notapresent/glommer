@@ -12,7 +12,6 @@ dropdb:
 	psql -c "DROP DATABASE IF EXISTS glommer;" postgres postgres
 	psql -c "DROP DATABASE IF EXISTS test_glommer;" postgres postgres
 
-
 requirements:
 	pip-compile --output-file requirements.txt requirements.in
 
@@ -21,3 +20,6 @@ serve:
 
 pgweb:
 	pgweb --bind=$(C9_IP) --url $(DATABASE_URL) --skip-open
+
+scrape:
+	python manage.py scrape
