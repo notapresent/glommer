@@ -22,4 +22,7 @@ pgweb:
 	pgweb --bind=$(C9_IP) --url $(DATABASE_URL) --skip-open
 
 scrape:
-	python manage.py scrape
+	python -u manage.py scrape
+
+test:
+	python manage.py test --keepdb
