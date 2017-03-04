@@ -4,6 +4,8 @@
 #
 #    pip-compile --output-file requirements.txt requirements.in
 #
+cssselect==1.0.1
 dj-database-url==0.4.2
 django==1.10.5
+lxml==3.7.3
 psycopg2==2.6.2
