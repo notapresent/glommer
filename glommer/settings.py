@@ -27,11 +27,8 @@ SECRET_KEY = os.environ['SECRET_KEY']   # SECRET_KEY environment variable is req
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = bool(os.environ.get('DEBUG'))
 
-if ',' in os.environ['ALLOWED_HOSTS']:
+if 'ALLOWED_HOSTS' in os.environ:
     ALLOWED_HOSTS = os.environ['ALLOWED_HOSTS'].split(',')
-else:
-    ALLOWED_HOSTS = [os.environ['ALLOWED_HOSTS']]
-
 
 # Application definition
 
