@@ -12,6 +12,7 @@ before_script:
 
 env:
   - DATABASE_URL='postgresql://postgres@localhost/travis_ci_test'
-
+  - SECRET_KEY='Not really a secret'
+  -
 # command to run tests
 script:  make test
