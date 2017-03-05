@@ -25,16 +25,13 @@ class FieldExtractorTestCase(unittest.TestCase):
 
 
 class RowExtractorTestCase(unittest.TestCase):
-    def test_extract_returns_seq(self):
-        e = RowExtractor()
-        rv = e.extract('<p></p>', '//p')
-        self.assertTrue(isinstance(rv, collections.Iterable))
-
     def test_extract_extracts_items(self):
-        e = RowExtractor()
+        e = RowExtractor(selector="//p[@class='a']")
         doc = '<div><p class="a">One</p><p class="a">Two</p><p class="b">Three</p></div>'
-        rv = e.extract(doc, "//p[@class='a']")
+        rv = e.extract(doc)
         self.assertEqual(len(rv), 2)
+        self.assertEqual(rv[0].text, 'One')
+        self.assertEqual(rv[1].text, 'Two')
 
 
 class UtilsTestCase(unittest.TestCase):

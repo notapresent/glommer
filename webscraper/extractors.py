@@ -16,8 +16,12 @@ class FieldExtractor:
 
 class RowExtractor:
     """Extracts sequence of document fragments from document or fragment"""
-    def extract(self, doc_or_tree, selector):
-        return ensure_element(doc_or_tree).xpath(selector)
+    def __init__(self, **settings):
+        self.selector = settings.pop('selector')
+
+    def extract(self, doc_or_tree):
+        return ensure_element(doc_or_tree).xpath(self.selector)
+
 
 def ensure_element(doc_or_tree):
     if isinstance(doc_or_tree, str):
