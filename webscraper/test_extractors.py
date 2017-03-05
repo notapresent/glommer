@@ -3,7 +3,7 @@ import unittest
 
 import lxml.html
 
-from .extractors import FieldExtractor, RowExtractor, ensure_element, scalar
+from .extractors import FieldExtractor, RowExtractor, DatasetExtractor, ensure_element, scalar
 
 
 class FieldExtractorTestCase(unittest.TestCase):
@@ -32,6 +32,28 @@ class RowExtractorTestCase(unittest.TestCase):
         self.assertEqual(len(rv), 2)
         self.assertEqual(rv[0].text, 'One')
         self.assertEqual(rv[1].text, 'Two')
+
+
+class DatasetExtractorTestCase(unittest.TestCase):
+    def setUp(self):
+        self.doc = '''
+        <div>
+            <p><a>1-1</a><i>1-2</i></p>
+            <p><a>2-1</a><i>2-2</i></p>
+        </div>
+        '''
+        self.row_selector = '//div/p'
+        self.field_selectors = {
+            'col1': {'selector': './a/text()'},
+            'col2': {'selector': './i/text()'}
+        }
+
+    def test_extract_extracts(self):
+        e = DatasetExtractor(selector=self.row_selector, fields=self.field_selectors)
+        rv = e.extract(self.doc)
+        self.assertEqual(len(rv), 2)
+        self.assertEqual(rv[0], {'col1':'1-1', 'col2': '1-2'})
+        self.assertEqual(rv[1], {'col1':'2-1', 'col2': '2-2'})
 
 
 class UtilsTestCase(unittest.TestCase):
