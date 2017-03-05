@@ -1,19 +1,6 @@
 import lxml.html
 
 
-class FieldExtractor:
-    """Extracts scalar value from document fragment"""
-    def __init__(self, **settings):
-        self.selector = settings.pop('selector')
-
-    def extract(self, fragment):
-        fragment = ensure_element(fragment)
-
-        results = fragment.xpath(self.selector)
-
-        return scalar(results)
-
-
 class RowExtractor:
     """Extracts sequence of document fragments from document or fragment"""
     def __init__(self, **settings):
@@ -21,6 +8,12 @@ class RowExtractor:
 
     def extract(self, doc_or_tree):
         return ensure_element(doc_or_tree).xpath(self.selector)
+
+class FieldExtractor(RowExtractor):
+    """Extracts scalar value from document fragment"""
+    def extract(self, fragment):
+        value = super(FieldExtractor, self).extract(fragment)
+        return scalar(value)
 
 
 class DatasetExtractor:
