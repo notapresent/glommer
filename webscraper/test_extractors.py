@@ -64,4 +64,4 @@ class UtilsTestCase(unittest.TestCase):
         self.assertIsInstance(ensure_element(elem), lxml.html.HtmlElement)
 
     def test_scalar_returns_1st_elem_only(self):
-        rv = self.assertEquals(scalar(['a', 'b']), 'a')
+        rv = self.assertEqual(scalar(['a', 'b']), 'a')
