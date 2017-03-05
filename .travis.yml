@@ -11,8 +11,9 @@ before_script:
   - psql -c 'create database travis_ci_test;' -U postgres
 
 env:
-  - DATABASE_URL='postgresql://postgres@localhost/travis_ci_test'
-  - SECRET_KEY='Not really a secret'
-  -
+  global:
+    - DATABASE_URL='postgresql://postgres@localhost/travis_ci_test'
+    - SECRET_KEY='Not really a secret'
+
 # command to run tests
 script:  make test
