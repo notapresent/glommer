@@ -3,7 +3,7 @@ python:
  - "3.5"
 
 dist: trusty
-sudo: false
+sudo: required
 
 services:
   - postgresql: "9.6"
@@ -12,6 +12,7 @@ services:
 install: "pip install -r requirements.txt"
 
 before_script:
+  - psql -t -c 'select version()' -U postgres
   - psql -c 'create database travis_ci_test;' -U postgres
 
 env:
