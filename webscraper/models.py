@@ -41,4 +41,3 @@ class Entry(Model):
 
     def __str__(self):
         return self.title
-

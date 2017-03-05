@@ -24,6 +24,7 @@ class RowExtractor:
 
 
 class DatasetExtractor:
+    """Extracts sequence of dicts from document"""
     def __init__(self, **settings):
         self.row_extractor = RowExtractor(selector=settings.pop('selector'))
         self.set_fields(settings.pop('fields'))
@@ -36,9 +37,7 @@ class DatasetExtractor:
         return [self.extract_fields(row) for row in rows]
 
     def extract_fields(self, row):
-        # print('extracting from %s' % lxml.html.tostring(row))
         rv = {name: self.fields[name].extract(row) for name in self.fields.keys()}
-        # print('Extracted %s' % rv)
         return rv
 
 
@@ -53,5 +52,3 @@ def scalar(scalar_or_seq):
         return scalar_or_seq[0]
     except IndexError:
         return scalar_or_seq
-
-

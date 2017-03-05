@@ -52,8 +52,8 @@ class DatasetExtractorTestCase(unittest.TestCase):
         e = DatasetExtractor(selector=self.row_selector, fields=self.field_selectors)
         rv = e.extract(self.doc)
         self.assertEqual(len(rv), 2)
-        self.assertEqual(rv[0], {'col1':'1-1', 'col2': '1-2'})
-        self.assertEqual(rv[1], {'col1':'2-1', 'col2': '2-2'})
+        self.assertEqual(rv[0], {'col1': '1-1', 'col2': '1-2'})
+        self.assertEqual(rv[1], {'col1': '2-1', 'col2': '2-2'})
 
 
 class UtilsTestCase(unittest.TestCase):
@@ -64,4 +64,4 @@ class UtilsTestCase(unittest.TestCase):
         self.assertIsInstance(ensure_element(elem), lxml.html.HtmlElement)
 
     def test_scalar_returns_1st_elem_only(self):
-        rv = self.assertEquals(scalar(['a','b']), 'a')
+        rv = self.assertEquals(scalar(['a', 'b']), 'a')
