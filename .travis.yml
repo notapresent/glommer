@@ -3,10 +3,13 @@ python:
  - "3.5"
 
 dist: trusty
-sudo: required
+sudo: false
 
 services:
-  - postgresql: "9.6"
+  - postgresql
+
+addons:
+  postgresql: "9.5"
 
  # command to install dependencies
 install: "pip install -r requirements.txt"
