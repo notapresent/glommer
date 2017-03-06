@@ -21,4 +21,4 @@ class DownloaderTestCase(unittest.TestCase):
         d.run()
         d.add_job(url, lambda t: self.assertIn('testheader', t))
         elapsed = timeit.timeit(d.run, number=1)
-        self.assertLess(elapsed, 0.0001)
+        self.assertLess(elapsed, 0.001)
