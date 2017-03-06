@@ -26,7 +26,7 @@ class Channel(Model):
     row_selector = CharField(max_length=512)
     url_selector = CharField(max_length=512)
     title_selector = CharField(max_length=512)
-    extra_selector = CharField(max_length=512)
+    extra_selector = CharField(max_length=512, blank=True)
 
     @classmethod
     def make_slug(cls):
