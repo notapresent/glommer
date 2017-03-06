@@ -97,3 +97,5 @@ ENV/
 .c9/
 
 .idea/
+
+.localdata/
