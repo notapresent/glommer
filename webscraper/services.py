@@ -56,3 +56,14 @@ class Downloader:
         md5 = hashlib.md5(url.encode('utf-8'))
         filename = md5.hexdigest()
         return os.path.join(self._cache_dir, filename)
+
+
+class URLTracker:
+    def __init__(self, channel):
+        self.channel = channel
+
+    def filter(self, current):
+        return []
+
+    def query(self):
+        return []

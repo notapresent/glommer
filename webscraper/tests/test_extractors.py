@@ -3,7 +3,7 @@ import unittest
 
 import lxml.html
 
-from .extractors import FieldExtractor, RowExtractor, DatasetExtractor, ensure_element, scalar
+from webscraper.extractors import FieldExtractor, RowExtractor, DatasetExtractor, ensure_element, scalar
 
 
 class FieldExtractorTestCase(unittest.TestCase):
