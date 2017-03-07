@@ -23,4 +23,4 @@ scrape:
 	python -u manage.py scrape
 
 test:
-	python manage.py test
+	python manage.py test --keepdb
