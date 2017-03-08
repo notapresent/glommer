@@ -2,7 +2,7 @@ import timeit
 import unittest
 
 from webscraper.models import Channel, Entry
-from webscraper.services import Downloader, URLTracker
+from webscraper.services import Downloader, URLTracker, rowset_diff, rowset_to_map
 
 from .util import create_channel, create_entry
 
@@ -27,11 +27,11 @@ class DownloaderTestCase(unittest.TestCase):
 
 
 class URLTrackerTestCase(unittest.TestCase):
-    def test_filter_returns_filters(self):
+    def test_filter_returns_iterable(self):
         channel = create_channel()
 
         ut = URLTracker(channel)
-        new_entries = ut.filter([])
+        new_entries = ut.track([])
         try:
             iter(new_entries)
         except TypeError:
@@ -46,5 +46,38 @@ class URLTrackerTestCase(unittest.TestCase):
         row = rv[0]
         self.assertEqual(row['url'], entry.url)
         self.assertEqual(row['id'], entry.id)
+
+class ServicesTestCase(unittest.TestCase):
+    def test_rowset_diff_returns_new_rows(self):
+        current_rowset = [
+            {'url': 'http://host.com/1'},
+            {'url': 'http://host.com/2'},
+        ]
+
+        new_rowset = [
+            {'url': 'http://host.com/2'},
+            {'url': 'http://host.com/3'},
+        ]
+
+        add, remove = rowset_diff(current_rowset, new_rowset)
+
+        self.assertEqual(add, [new_rowset[1]])
+        self.assertEqual(remove, [current_rowset[0]])
+
+
+    def test_rowset_to_map(self):
+        rowset = [
+            {'id': 1, 'url': 'http://host.com/1'},
+            {'id': 2, 'url': 'http://host.com/2'}
+        ]
+        keyname = 'url'
+        mapping = rowset_to_map(rowset, keyname)
+
+        self.assertEqual(len(mapping), len(rowset))
+        for row in rowset:
+            self.assertEqual(mapping[row[keyname]], row)
+
+
+
 
 
