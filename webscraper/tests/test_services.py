@@ -27,21 +27,24 @@ class DownloaderTestCase(unittest.TestCase):
 
 
 class URLTrackerTestCase(unittest.TestCase):
-    def test_returns_iterable(self):
-        ut = URLTracker(None)
+    def test_filter_returns_filters(self):
+        channel = create_channel()
+
+        ut = URLTracker(channel)
         new_entries = ut.filter([])
         try:
             iter(new_entries)
         except TypeError:
             self.fail("filter method must return iterable")
 
-    def test_get_query(self):
+    def test_query(self):
         channel = create_channel()
-        for i in range(10):
-            create_entry(channel=channel, url='http://example.com/%s' % i)
-
+        entry = create_entry(channel=channel)
         ut = URLTracker(channel)
         rv = ut.query()
-        # self.assertEqual(len(rv), 10)
+        self.assertEqual(len(rv), 1)
+        row = rv[0]
+        self.assertEqual(row['url'], entry.url)
+        self.assertEqual(row['id'], entry.id)
 
 

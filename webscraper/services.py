@@ -3,6 +3,8 @@ import hashlib
 
 import requests
 
+from .models import Channel, Entry
+
 
 class Scraper(object):
     def run(self):
@@ -62,8 +64,9 @@ class URLTracker:
     def __init__(self, channel):
         self.channel = channel
 
-    def filter(self, current):
+    def filter(self, current_urls_set):
         return []
 
     def query(self):
-        return []
+        return Entry.objects.filter(channel=self.channel).values('id', 'url')
+
