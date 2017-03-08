@@ -26,5 +26,5 @@ test:
 	python manage.py test --keepdb
 
 autotest:
-	find . -name '*.py' | entr -d -c  python manage.py test --keepdb
+	find . -name '*.py' -not -path '*/\.*' | entr -d -c  python manage.py test --keepdb
 
