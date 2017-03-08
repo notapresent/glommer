@@ -64,27 +64,20 @@ class URLTracker:
     def __init__(self, channel):
         self.channel = channel
 
-    def track(self, new_rowset):
-        return []
+    def track(self, new_urls):
+        add_urls, remove_urls = list_diff(self.current_urls(), new_urls)
+        self.bulk_remove(remove_urls)
+        return add_urls, remove_urls
 
-    def query(self):
-        return Entry.objects.filter(channel=self.channel).values('id', 'url')
+    def bulk_remove(self, urls):
+        Entry.objects.filter(channel=self.channel, url__in=urls).delete()
 
-
-def rowset_to_map(rowset, keyname):
-    return {row[keyname]: row for row in rowset}
-
-
-def rowset_diff(oldset, newset):
-    old_url_to_rec = rowset_to_map(oldset, 'url')
-    new_url_to_rec = rowset_to_map(newset, 'url')
-    old_urlset = set(old_url_to_rec.keys())
-    new_urlset = set(new_url_to_rec.keys())
-    remove_urls = old_urlset - new_urlset
-
-    add_urls = new_urlset - old_urlset
-
-    return ([new_url_to_rec[url] for url in add_urls],
-            [old_url_to_rec[url] for url in remove_urls])
+    def current_urls(self):
+        rows = Entry.objects.filter(channel=self.channel).values('url')
+        return [row['url'] for row in rows]
 
 
+def list_diff(old, new):
+    oldset = set(old)
+    newset = set(new)
+    return newset - oldset, oldset - newset

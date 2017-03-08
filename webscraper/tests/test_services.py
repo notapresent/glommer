@@ -2,9 +2,9 @@ import timeit
 import unittest
 
 from webscraper.models import Channel, Entry
-from webscraper.services import Downloader, URLTracker, rowset_diff, rowset_to_map
+from webscraper.services import Downloader, URLTracker, list_diff
 
-from .util import create_channel, create_entry
+from .util import create_channel, create_entry, ENTRY_DEFAULTS
 
 
 class DownloaderTestCase(unittest.TestCase):
@@ -27,57 +27,47 @@ class DownloaderTestCase(unittest.TestCase):
 
 
 class URLTrackerTestCase(unittest.TestCase):
-    def test_filter_returns_iterable(self):
+    def test_track_returns_new_rows(self):
         channel = create_channel()
+        entry_fields = ENTRY_DEFAULTS.copy()
+        entry_fields['channel'] = channel
+        test_entries = []
+        for i in (1, 2):
+            fields = entry_fields.copy()
+            fields['url'] = 'http://host.com/%s' % i
+            test_entries.append(Entry(**fields))
 
-        ut = URLTracker(channel)
-        new_entries = ut.track([])
-        try:
-            iter(new_entries)
-        except TypeError:
-            self.fail("filter method must return iterable")
+        Entry.objects.bulk_create(test_entries)
+        tracker = URLTracker(channel)
 
-    def test_query(self):
+        new_urls = ['http://host.com/2', 'http://host.com/3']
+        add, remove = tracker.track(new_urls)
+        self.assertEqual(list(add), [new_urls[1]])
+
+    def test_track_deletes_old(self):
+        channel = create_channel()
+        create_entry(channel=channel)
+        tracker = URLTracker(channel)
+        tracker.track([])
+        self.assertEqual(len(Entry.objects.filter(channel=channel)), 0)
+
+
+    def test_current_urls(self):
         channel = create_channel()
         entry = create_entry(channel=channel)
-        ut = URLTracker(channel)
-        rv = ut.query()
+        tracker = URLTracker(channel)
+        rv = tracker.current_urls()
         self.assertEqual(len(rv), 1)
-        row = rv[0]
-        self.assertEqual(row['url'], entry.url)
-        self.assertEqual(row['id'], entry.id)
+        self.assertEqual(rv[0], entry.url)
+
 
 class ServicesTestCase(unittest.TestCase):
-    def test_rowset_diff_returns_new_rows(self):
-        current_rowset = [
-            {'url': 'http://host.com/1'},
-            {'url': 'http://host.com/2'},
-        ]
-
-        new_rowset = [
-            {'url': 'http://host.com/2'},
-            {'url': 'http://host.com/3'},
-        ]
-
-        add, remove = rowset_diff(current_rowset, new_rowset)
-
-        self.assertEqual(add, [new_rowset[1]])
-        self.assertEqual(remove, [current_rowset[0]])
-
-
-    def test_rowset_to_map(self):
-        rowset = [
-            {'id': 1, 'url': 'http://host.com/1'},
-            {'id': 2, 'url': 'http://host.com/2'}
-        ]
-        keyname = 'url'
-        mapping = rowset_to_map(rowset, keyname)
-
-        self.assertEqual(len(mapping), len(rowset))
-        for row in rowset:
-            self.assertEqual(mapping[row[keyname]], row)
-
-
+    def test_list_diff(self):
+        old = [1, 2]
+        new = [2, 3]
+        add, remove = list_diff(old, new)
+        self.assertEqual(list(add), [3])
+        self.assertEqual(list(remove), [1])
 
 
 
