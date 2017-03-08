@@ -24,3 +24,7 @@ scrape:
 
 test:
 	python manage.py test --keepdb
+
+autotest:
+	find . -name '*.py' | entr -d -c  python manage.py test --keepdb
+
