@@ -6,10 +6,10 @@ from django.utils.crypto import get_random_string
 
 class Channel(Model):
     """Represents content channel"""
-    I_MANUAL    = 'MAN'
-    I_10MIN     = '10M'
-    I_1HOUR     = '1H'
-    I_1DAY      = '1D'
+    I_MANUAL = 'MAN'
+    I_10MIN = '10M'
+    I_1HOUR = '1H'
+    I_1DAY = '1D'
 
     INTERVAL_CHOICES = (
         (I_MANUAL, 'Manual'),

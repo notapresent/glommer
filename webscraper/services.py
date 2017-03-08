@@ -7,12 +7,14 @@ from .models import Channel, Entry
 
 
 class Scraper(object):
+
     def run(self):
         return 0    # TODO implement this
 
 
 class Downloader:
     """Sequential downloader for testing"""
+
     def __init__(self, cache_dir=None):
         self._jobs = []
         if cache_dir:
@@ -61,6 +63,7 @@ class Downloader:
 
 
 class URLTracker:
+
     def __init__(self, channel):
         self.channel = channel
 

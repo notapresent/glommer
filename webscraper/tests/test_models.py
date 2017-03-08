@@ -6,6 +6,7 @@ from .util import CHANNEL_DEFAULTS, ENTRY_DEFAULTS, create_channel, create_entry
 
 
 class ChannelTestCase(TestCase):
+
     def test_model_fields(self):
         channel = create_channel()
         for fieldname, fieldvalue in CHANNEL_DEFAULTS.items():
@@ -18,6 +19,7 @@ class ChannelTestCase(TestCase):
 
 
 class EntryTestCase(TestCase):
+
     def test_model_fields(self):
         entry = create_entry()
 

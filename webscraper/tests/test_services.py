@@ -8,6 +8,7 @@ from .util import create_channel, create_entry, ENTRY_DEFAULTS
 
 
 class DownloaderTestCase(unittest.TestCase):
+
     def test_downloads(self):
         def cb(text):
             self.assertIn('origin', text)
@@ -27,6 +28,7 @@ class DownloaderTestCase(unittest.TestCase):
 
 
 class URLTrackerTestCase(unittest.TestCase):
+
     def test_track_returns_new_rows(self):
         channel = create_channel()
         entry_fields = ENTRY_DEFAULTS.copy()
@@ -51,7 +53,6 @@ class URLTrackerTestCase(unittest.TestCase):
         tracker.track([])
         self.assertEqual(len(Entry.objects.filter(channel=channel)), 0)
 
-
     def test_current_urls(self):
         channel = create_channel()
         entry = create_entry(channel=channel)
@@ -62,12 +63,10 @@ class URLTrackerTestCase(unittest.TestCase):
 
 
 class ServicesTestCase(unittest.TestCase):
+
     def test_list_diff(self):
         old = [1, 2]
         new = [2, 3]
         add, remove = list_diff(old, new)
         self.assertEqual(list(add), [3])
         self.assertEqual(list(remove), [1])
-
-
-

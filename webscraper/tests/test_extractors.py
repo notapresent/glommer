@@ -7,6 +7,7 @@ from webscraper.extractors import FieldExtractor, RowExtractor, DatasetExtractor
 
 
 class FieldExtractorTestCase(unittest.TestCase):
+
     def setUp(self):
         self.extractor = FieldExtractor(selector='//a/text()')
 
@@ -25,6 +26,7 @@ class FieldExtractorTestCase(unittest.TestCase):
 
 
 class RowExtractorTestCase(unittest.TestCase):
+
     def test_extract_extracts_items(self):
         e = RowExtractor(selector="//p[@class='a']")
         doc = '<div><p class="a">One</p><p class="a">Two</p><p class="b">Three</p></div>'
@@ -35,6 +37,7 @@ class RowExtractorTestCase(unittest.TestCase):
 
 
 class DatasetExtractorTestCase(unittest.TestCase):
+
     def setUp(self):
         self.doc = '''
         <div>
@@ -57,6 +60,7 @@ class DatasetExtractorTestCase(unittest.TestCase):
 
 
 class UtilsTestCase(unittest.TestCase):
+
     def test_ensure_element_returs_htmlelement(self):
         doc = '<p>test</p>'
         elem = lxml.html.fromstring(doc)

@@ -20,7 +20,8 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('title', models.CharField(max_length=512)),
-                ('interval', models.CharField(choices=[('MAN', 'Manual'), ('10M', 'Every 10 minutes'), ('1H', 'Every hour'), ('1D', 'Every day')], default='1D', max_length=3)),
+                ('interval', models.CharField(choices=[
+                 ('MAN', 'Manual'), ('10M', 'Every 10 minutes'), ('1H', 'Every hour'), ('1D', 'Every day')], default='1D', max_length=3)),
                 ('enabled', models.BooleanField(default=True)),
                 ('url', models.URLField(max_length=2048)),
                 ('slug', models.CharField(editable=False, max_length=32, unique=True)),
