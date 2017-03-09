@@ -14,7 +14,9 @@ addons:
   postgresql: "9.5"
 
  # command to install dependencies
-install: "pip install -r requirements.txt"
+install:
+  - "pip install -r requirements/base.txt"
+  - "pip install -r requirements/test.txt"
 
 before_script:
   - psql -t -c 'select version()' -U postgres
@@ -27,4 +29,7 @@ env:
     - SECRET_KEY='Not really a secret'
 
 # command to run tests
-script:  make test
+script: coverage run manage.py test --keepdb
+
+after_success:
+  - codecov
