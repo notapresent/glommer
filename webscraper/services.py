@@ -17,10 +17,19 @@ class Downloader:
 
     def __init__(self, cache_dir=None):
         self._jobs = []
-        if cache_dir:
-            self._cache_dir = os.path.join(os.getcwd(), cache_dir)
-        else:
-            self._cache_dir = None
+        self._cache_dir = self.set_cache_dir(cache_dir)
+
+    def set_cache_dir(self, cache_dir):
+        if not cache_dir:
+            return None
+
+        if not os.path.isabs(cache_dir):
+            cache_dir = os.path.join(os.getcwd(), cache_dir)
+
+        if not os.path.isdir(cache_dir):
+            return None
+
+        return cache_dir
 
     def add_job(self, url, cb):
         self._jobs.append((url, cb))

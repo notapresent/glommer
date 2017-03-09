@@ -26,6 +26,9 @@ class DownloaderTestCase(unittest.TestCase):
         elapsed = timeit.timeit(d.run, number=1)
         self.assertLess(elapsed, 0.001)
 
+    def test_caching_disabled_if_dir_not_exists(self):
+        d = Downloader('/some-non-existent-dir')
+        self.assertIsNone(d._cache_dir)
 
 class URLTrackerTestCase(unittest.TestCase):
 
