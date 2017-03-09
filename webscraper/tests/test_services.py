@@ -1,3 +1,4 @@
+import tempfile
 import timeit
 import unittest
 
@@ -19,12 +20,13 @@ class DownloaderTestCase(unittest.TestCase):
 
     def test_cacing(self):
         url = 'https://httpbin.org/get?testheader=1'
-        d = Downloader(cache_dir='.localdata/cache')
-        d.add_job(url, lambda t: None)
-        d.run()
-        d.add_job(url, lambda t: self.assertIn('testheader', t))
-        elapsed = timeit.timeit(d.run, number=1)
-        self.assertLess(elapsed, 0.001)
+        with tempfile.TemporaryDirectory() as cache_dir:
+            d = Downloader(cache_dir=cache_dir)
+            d.add_job(url, lambda t: None)
+            d.run()
+            d.add_job(url, lambda t: self.assertIn('testheader', t))
+            elapsed = timeit.timeit(d.run, number=1)
+            self.assertLess(elapsed, 0.001)
 
     def test_caching_disabled_if_dir_not_exists(self):
         d = Downloader('/some-non-existent-dir')
