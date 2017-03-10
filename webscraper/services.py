@@ -1,15 +1,112 @@
+import asyncio
+import aiohttp
 import os
 import hashlib
+import async_timeout
+from urllib.parse import urljoin
 
 import requests
+from django.conf import settings
 
+from .extractors import DatasetExtractor
 from .models import Channel, Entry
 
+DEFAULT_HEADERS = {
+    'User-Agent': 'Mozilla/5.0 Glommer/1.0'
+}
 
-class Scraper(object):
+REQUEST_TIMEOUT = 2 # seconds
+
+
+class Scraper:
+    def __init__(self):
+        self.session = None
+        self.current_tasks = {}
 
     def run(self):
-        return 0    # TODO implement this
+        loop = asyncio.get_event_loop()
+        entry_num_list = loop.run_until_complete(self.task_wrapper())
+        loop.close()
+        print(entry_num_list)
+        for r in entry_num_list:
+            if isinstance(r, BaseException):
+                raise r
+
+        return len(entry_num_list), sum(entry_num_list)
+
+    async def task_wrapper(self):
+        channels = self.get_channels()
+        tasks = [self.process_channel(c) for c in channels]
+
+        async with aiohttp.ClientSession(headers=DEFAULT_HEADERS) as self.session:     # TODO move this somewhere
+            return await asyncio.gather(*tasks, return_exceptions=True)
+
+    def get_channels(self):
+        return Channel.objects.filter(enabled=True)
+
+    async def process_channel(self, channel):
+        response, html = await get_with_timeout(self.session, channel.url)
+        if not response:
+            return 0
+
+        dex = DatasetExtractor(**channel.extractor_settings())
+        rowset = dex.extract(html)
+
+
+        for row in rowset:
+            row['url'] = urljoin(channel.url, row['url'])
+
+        url2row = {row['url']: row for row in rowset}
+        tracker = URLTracker(channel)
+        add, remove = tracker.track(url2row.keys())
+
+        entries = []
+        for url in add:
+            row = url2row[url]
+            self.current_tasks[url] = row
+            entry = await self.process_entry(channel, row)
+            entries.append(entry)
+            self.current_tasks.pop(url)
+
+        print("Channel %s - %d in, %d out" % (channel.title, len(add), len(remove)))
+        return len(add)  # Number of processed entries
+
+    async def process_entry(self, channel, entry_dict):
+        resp, html = await get_with_timeout(self.session, entry_dict['url'])
+        entry = Entry(
+            channel=channel,
+            url=entry_dict['url'],
+            title=entry_dict['title'],
+            extra=entry_dict.get('extra')
+        )
+
+        if resp:
+            items = {}
+            entry.final_url=resp.history[-1].url if resp.history else entry_dict['url']
+            entry.items=items
+
+        if settings.DEBUG:
+            print('Processed %d %s\t\t%s' % (len(self.current_tasks), channel.title, entry_dict['title']))
+
+        return entry
+
+
+
+async def get_with_timeout(session, url):
+    try:
+        with async_timeout.timeout(REQUEST_TIMEOUT, loop=session.loop):
+            async with session.get(url) as response:
+                response.raise_for_status()
+                body = await response.text(errors='ignore')
+                # print('GET {} - {} ({} bytes)'.format(url, response.reason, len(body)))
+                return response, body
+    except asyncio.TimeoutError:
+        return None, None
+    except aiohttp.HttpProcessingError:
+        return None, None
+    except UnicodeDecodeError as e:
+        print(response)
+        raise
 
 
 class Downloader:

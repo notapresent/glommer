@@ -76,3 +76,13 @@ class ServicesTestCase(TestCase):
         add, remove = list_diff(old, new)
         self.assertEqual(list(add), [3])
         self.assertEqual(list(remove), [1])
+
+
+class ScraperTestCase(TestCase):
+    def test_get_channels_returns_enabled_channels(self):
+        c1 = create_channel(enabled=True)
+        c2 = create_channel(enabled=False)
+        s = Scraper()
+        channels = s.get_channels()
+        self.assertEqual(len(channels), 1)
+        self.assertEqual(channels[0], c1)
