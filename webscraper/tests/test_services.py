@@ -1,14 +1,14 @@
 import tempfile
 import timeit
-import unittest
+
+from django.test import TestCase
 
 from webscraper.models import Channel, Entry
-from webscraper.services import Downloader, URLTracker, list_diff
-
+from webscraper.services import Scraper, Downloader, URLTracker, list_diff
 from .util import create_channel, create_entry, ENTRY_DEFAULTS
 
 
-class DownloaderTestCase(unittest.TestCase):
+class DownloaderTestCase(TestCase):
 
     def test_downloads(self):
         def cb(text):
@@ -32,7 +32,8 @@ class DownloaderTestCase(unittest.TestCase):
         d = Downloader('/some-non-existent-dir')
         self.assertIsNone(d._cache_dir)
 
-class URLTrackerTestCase(unittest.TestCase):
+
+class URLTrackerTestCase(TestCase):
 
     def test_track_returns_new_rows(self):
         channel = create_channel()
@@ -67,7 +68,7 @@ class URLTrackerTestCase(unittest.TestCase):
         self.assertEqual(rv[0], entry.url)
 
 
-class ServicesTestCase(unittest.TestCase):
+class ServicesTestCase(TestCase):
 
     def test_list_diff(self):
         old = [1, 2]
