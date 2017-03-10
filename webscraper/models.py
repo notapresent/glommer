@@ -45,6 +45,19 @@ class Channel(Model):
     def __str__(self):
         return self.title
 
+    def extractor_settings(self):
+        rv = {
+            'selector': self.row_selector,
+            'fields': {
+                'url': {'selector': self.url_selector},
+                'title': {'selector': self.title_selector},
+            }
+        }
+
+        if self.extra_selector:
+            rv['fields']['extra'] = {'selector': self.extra_selector}
+
+        return rv
 
 class Entry(Model):
     """Represents content entry"""

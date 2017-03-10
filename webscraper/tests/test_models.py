@@ -17,6 +17,15 @@ class ChannelTestCase(TestCase):
         self.assertNotEqual(channel.slug, '')
         self.assertIsNotNone(channel.slug)
 
+    def test_extractor_settings(self):
+        channel = create_channel()
+        rv = channel.extractor_settings()
+        self.assertEqual(rv['selector'], CHANNEL_DEFAULTS['row_selector'])
+        self.assertEqual(len(rv['fields']), 3)
+        self.assertEqual(rv['fields']['url'], {'selector': CHANNEL_DEFAULTS['url_selector']})
+        self.assertEqual(rv['fields']['title'], {'selector': CHANNEL_DEFAULTS['title_selector']})
+        self.assertEqual(rv['fields']['extra'], {'selector': CHANNEL_DEFAULTS['extra_selector']})
+
 
 class EntryTestCase(TestCase):
 
