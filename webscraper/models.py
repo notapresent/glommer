@@ -3,7 +3,7 @@ from django.contrib.postgres.fields import ArrayField, JSONField
 from django.db.models import Model, CharField, DateTimeField, ForeignKey, URLField, CASCADE, BooleanField
 from django.utils.crypto import get_random_string
 
-from .managers import ChannelManager
+from .managers import ChannelManager, EntryManager
 
 class Channel(Model):
     """Represents content channel"""
@@ -74,6 +74,8 @@ class Entry(Model):
 
     final_url = URLField(max_length=2048, blank=True)   # url after all redirects etc
     items = JSONField(default=None, null=True, blank=True)        # TODO: Document this structure
+
+    objects = EntryManager()
 
     def __str__(self):
         return self.title
