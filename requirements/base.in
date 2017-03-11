@@ -3,3 +3,6 @@ dj-database-url
 psycopg2
 lxml
 cssselect
+aiohttp
+cchardet
+aiodns
