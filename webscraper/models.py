@@ -3,6 +3,7 @@ from django.contrib.postgres.fields import ArrayField, JSONField
 from django.db.models import Model, CharField, DateTimeField, ForeignKey, URLField, CASCADE, BooleanField
 from django.utils.crypto import get_random_string
 
+from .managers import ChannelManager
 
 class Channel(Model):
     """Represents content channel"""
@@ -17,6 +18,7 @@ class Channel(Model):
         (I_1HOUR, 'Every hour'),
         (I_1DAY, 'Every day'),
     )
+
     title = CharField(max_length=512)
     interval = CharField(max_length=3, choices=INTERVAL_CHOICES, default=I_1DAY)
     enabled = BooleanField(default=True)
@@ -27,6 +29,8 @@ class Channel(Model):
     url_selector = CharField(max_length=512)
     title_selector = CharField(max_length=512)
     extra_selector = CharField(max_length=512, blank=True)
+
+    objects = ChannelManager()
 
     @classmethod
     def make_slug(cls):

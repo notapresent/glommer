@@ -6,10 +6,10 @@ CHANNEL_DEFAULTS = {
     'interval': Channel.INTERVAL_CHOICES[0][0],
     'enabled': True,
     'url': 'http://example.com/',
-    'row_selector': 'dummy selector',
-    'url_selector': 'dummy selector',
-    'title_selector': 'dummy selector',
-    'extra_selector': 'dummy selector'
+    'row_selector': '//a[@href]',
+    'url_selector': '@href',
+    'title_selector': 'text()',
+    'extra_selector': '@title'
 }
 
 ENTRY_DEFAULTS = {
