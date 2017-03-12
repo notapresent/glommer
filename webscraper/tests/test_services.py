@@ -6,6 +6,7 @@ from .util import create_channel, create_entry, ENTRY_DEFAULTS
 
 
 class URLTrackerTestCase(TestCase):
+
     def setUp(self):
         self.channel = create_channel()
         self.entry = create_entry(channel=self.channel)
@@ -34,6 +35,7 @@ class URLTrackerTestCase(TestCase):
 
 
 class ServicesTestCase(TestCase):
+
     def test_list_diff(self):
         old = [1, 2]
         new = [2, 3]

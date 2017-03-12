@@ -3,7 +3,9 @@ from django.test import TestCase
 from webscraper.models import Channel, Entry
 from .util import create_channel, create_entry
 
+
 class ChannelManagerTestCase(TestCase):
+
     def test_enabled_returns_enabled(self):
         c1 = create_channel(enabled=True)
         c2 = create_channel(enabled=False)
@@ -13,6 +15,7 @@ class ChannelManagerTestCase(TestCase):
 
 
 class EntryManagerTestCase(TestCase):
+
     def setUp(self):
         self.channel = create_channel()
         self.entry = create_entry(channel=self.channel)

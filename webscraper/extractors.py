@@ -2,6 +2,7 @@ import lxml.html
 
 
 class RowExtractor:
+
     """Extracts sequence of document fragments from document or fragment"""
 
     def __init__(self, **settings):
@@ -12,6 +13,7 @@ class RowExtractor:
 
 
 class FieldExtractor(RowExtractor):
+
     """Extracts scalar value from document fragment"""
 
     def extract(self, fragment):
@@ -20,6 +22,7 @@ class FieldExtractor(RowExtractor):
 
 
 class DatasetExtractor:
+
     """Extracts sequence of dicts from document"""
 
     def __init__(self, **settings):

@@ -1,11 +1,15 @@
 from .models import Channel, Entry
 
+
 class Scraper:
+
     def run(self):
         raise NotImplementedError()
 
 
 class URLTracker:
+
+    """Keeps track of processed URLs"""
 
     def __init__(self, channel):
         self.channel = channel
@@ -23,6 +27,7 @@ class URLTracker:
     def get_current_urls_to_ids(self):
         rows = Entry.objects.get_id_url_for_channel(self.channel)
         return {row['url']: row['id'] for row in rows}
+
 
 def list_diff(old, new):
     oldset = set(old)

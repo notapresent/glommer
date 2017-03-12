@@ -1,12 +1,15 @@
 from django.contrib.auth.models import User
-from django.contrib.postgres.fields import ArrayField, JSONField
+from django.contrib.postgres.fields import JSONField
 from django.db.models import Model, CharField, DateTimeField, ForeignKey, URLField, CASCADE, BooleanField
 from django.utils.crypto import get_random_string
 
 from .managers import ChannelManager, EntryManager
 
+
 class Channel(Model):
+
     """Represents content channel"""
+
     I_MANUAL = 'MAN'
     I_10MIN = '10M'
     I_1HOUR = '1H'
@@ -63,8 +66,11 @@ class Channel(Model):
 
         return rv
 
+
 class Entry(Model):
+
     """Represents content entry"""
+
     channel = ForeignKey(Channel, on_delete=CASCADE)
     added = DateTimeField('date added', auto_now_add=True)
 
