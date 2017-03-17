@@ -1,10 +1,20 @@
+import asyncio
+import aiohttp
+
 from .models import Channel, Entry
 
 
-class Scraper:
+class AioHttpScraper:
+    def __init__(self):
+        pass
 
     def run(self):
-        raise NotImplementedError()
+        channels = Channel.objects.enabled()
+        entries_processed = 0
+        for channel in channels:
+            entries_processed += channel.entry_set.count()
+
+        return len(channels), entries_processed
 
 
 class URLTracker:
@@ -33,3 +43,10 @@ def list_diff(old, new):
     oldset = set(old)
     newset = set(new)
     return newset - oldset, oldset - newset
+
+
+async def get(url, sess):
+    resp = await sess.get(url)
+    body = await resp.text(errors='ignore')
+    return resp, body
+

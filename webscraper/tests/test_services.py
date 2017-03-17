@@ -1,7 +1,10 @@
+import asyncio
+import aiohttp
+
 from django.test import TestCase
 
 from webscraper.models import Channel, Entry
-from webscraper.services import Scraper, URLTracker, list_diff
+from webscraper.services import AioHttpScraper, URLTracker, list_diff, get
 from .util import create_channel, create_entry, ENTRY_DEFAULTS
 
 
@@ -42,3 +45,42 @@ class ServicesTestCase(TestCase):
         add, remove = list_diff(old, new)
         self.assertEqual(list(add), [3])
         self.assertEqual(list(remove), [1])
+
+
+class AioHttpScraperTestCase(TestCase):
+
+    def test_run_returns_2_num_tuple(self):
+        scr = AioHttpScraper()
+        v1, v2 = scr.run()
+        self.assertIsInstance(v1, int)
+        self.assertIsInstance(v2, int)
+
+    def test_run_returns_number_of_active_channels(self):
+        create_channel()
+        scr = AioHttpScraper()
+        v1, v2 = scr.run()
+        enabled_channels = Channel.objects.enabled()
+        self.assertEqual(v1, len(enabled_channels))
+
+    def test_run_returns_number_of_processed_entries(self):
+        channel = create_channel()
+        entries = [Entry(channel=channel) for _ in range(2)]
+        Entry.objects.bulk_create(entries)
+
+        scr = AioHttpScraper()
+        v1, v2 = scr.run()
+        self.assertEqual(v2, len(entries))
+
+
+class AioHttpDownloaderTestCase(TestCase):
+    def setUp(self):
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(None)
+
+    def test_get_downloads(self):
+        async def go():
+            async with aiohttp.ClientSession(loop=self.loop) as sess:
+                return await get('http://httpbin.org/get?testString', sess)
+
+        resp, body = self.loop.run_until_complete(go())
+        self.assertIn('testString', body)
