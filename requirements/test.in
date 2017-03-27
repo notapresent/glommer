@@ -1,1 +1,3 @@
 codecov
+-e git+git://github.com/notapresent/vcrpy.git#egg=vcrpy
+vcrpy-unittest

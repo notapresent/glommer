@@ -2,10 +2,12 @@ import asyncio
 import aiohttp
 
 from django.test import TestCase
+from vcr_unittest import VCRMixin
 
 from webscraper.models import Channel, Entry
 from webscraper.services import AioHttpScraper, URLTracker, list_diff, get
 from .util import create_channel, create_entry, ENTRY_DEFAULTS
+
 
 
 class URLTrackerTestCase(TestCase):
@@ -72,8 +74,9 @@ class AioHttpScraperTestCase(TestCase):
         self.assertEqual(v2, len(entries))
 
 
-class AioHttpDownloaderTestCase(TestCase):
+class AioHttpDownloaderTestCase(VCRMixin, TestCase):
     def setUp(self):
+        super(AioHttpDownloaderTestCase, self).setUp()
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(None)
 

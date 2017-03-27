@@ -49,4 +49,3 @@ async def get(url, sess):
     resp = await sess.get(url)
     body = await resp.text(errors='ignore')
     return resp, body
-
