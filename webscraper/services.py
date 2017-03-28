@@ -1,5 +1,6 @@
 import asyncio
 import aiohttp
+import async_timeout
 
 from .models import Channel, Entry
 
@@ -45,7 +46,22 @@ def list_diff(old, new):
     return newset - oldset, oldset - newset
 
 
-async def get(url, sess):
-    resp = await sess.get(url)
-    body = await resp.text(errors='ignore')
+class DownloadError(Exception):
+    def __init__(self, *args, **kw):
+        self.message = kw.get('message')
+
+async def get(url, sess, timeout=2):
+    try:
+        with async_timeout.timeout(timeout):
+            resp = await sess.get(url)
+            resp.raise_for_status()
+            body = await resp.text(errors='ignore')
+
+    except aiohttp.client_exceptions.ClientError as e:
+        message = getattr(e, 'message', 'Generic download error')
+        raise DownloadError(message=message) from e
+
+    except asyncio.TimeoutError as e:
+        raise DownloadError(message='Timeout') from e
+
     return resp, body
