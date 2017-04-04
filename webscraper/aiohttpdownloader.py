@@ -32,8 +32,8 @@ class Downloader:
     HEADERS = {'User-agent': 'Mozilla/5.0 Gecko/20100101 glommer/1.0'}
     TIMEOUT = 2  # seconds
 
-    def __init__(self, loop):
-        self._loop = loop
+    def __init__(self, loop=None):
+        self._loop = loop or asyncio.get_event_loop()
         self._conn = None
         self._session = None
 
