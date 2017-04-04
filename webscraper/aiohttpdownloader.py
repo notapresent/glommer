@@ -34,17 +34,17 @@ class Downloader:
 
     def __init__(self, loop=None):
         self._loop = loop or asyncio.get_event_loop()
-        self._conn = None
-        self._session = None
-
-    async def __aenter__(self):
         self._conn = aiohttp.TCPConnector(verify_ssl=False, limit_per_host=1)
         self._session = aiohttp.ClientSession(loop=self._loop, connector=self._conn, headers=self.HEADERS)
 
+    async def __aenter__(self):
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        await self._session.close()
+        await self.teardown()
 
     async def get(self, url):
         return await fetch(url, self._session, self.TIMEOUT)
+
+    async def teardown(self):
+        await self._session.close()
