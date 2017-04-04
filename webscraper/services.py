@@ -1,22 +1,11 @@
-import asyncio
-import aiohttp
-import async_timeout
-
 from .models import Channel, Entry
+from .aiohttpdownloader import DownloadError
+from .aioscraper import AioHttpScraper as Scraper
 
 
-class AioHttpScraper:
-    def __init__(self):
-        pass
-
-    def run(self):
-        channels = Channel.objects.enabled()
-        entries_processed = 0
-        for channel in channels:
-            entries_processed += channel.entry_set.count()
-
-        return len(channels), entries_processed
-
+# class Scraper(AioHttpScraper):
+#     pass
+#
 
 class URLTracker:
 
@@ -25,12 +14,13 @@ class URLTracker:
     def __init__(self, channel):
         self.channel = channel
 
-    def track(self, new_urls):
+    def track(self, entries):
         urls_to_ids = self.get_current_urls_to_ids()
-        add_urls, remove_urls = list_diff(urls_to_ids.keys(), new_urls)
+        urls_to_entries = {e.url: e for e in entries}
+        add_urls, remove_urls = list_diff(urls_to_ids.keys(), urls_to_entries.keys())
         ids_to_remove = [urls_to_ids[url] for url in remove_urls]
         self.bulk_remove(ids_to_remove)
-        return add_urls, remove_urls
+        return [urls_to_entries.get(u) for u in add_urls]
 
     def bulk_remove(self, ids):
         Entry.objects.delete_from_channel_by_ids(self.channel, ids)
@@ -45,23 +35,3 @@ def list_diff(old, new):
     newset = set(new)
     return newset - oldset, oldset - newset
 
-
-class DownloadError(Exception):
-    def __init__(self, *args, **kw):
-        self.message = kw.get('message')
-
-async def get(url, sess, timeout=2):
-    try:
-        with async_timeout.timeout(timeout):
-            resp = await sess.get(url)
-            resp.raise_for_status()
-            body = await resp.text(errors='ignore')
-
-    except aiohttp.client_exceptions.ClientError as e:
-        message = getattr(e, 'message', 'Generic download error')
-        raise DownloadError(message=message) from e
-
-    except asyncio.TimeoutError as e:
-        raise DownloadError(message='Timeout') from e
-
-    return resp, body
