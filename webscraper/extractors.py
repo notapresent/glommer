@@ -52,3 +52,14 @@ def scalar(scalar_or_seq):
         return scalar_or_seq[0]
     except IndexError:
         return scalar_or_seq
+
+
+class MultiExtractor:
+    """Set of extractors to operate on a single document"""
+
+    def __init__(self, extractors_dict):
+        self.extractors = extractors_dict
+
+    def extract(self, doc_or_tree):
+        tree = ensure_element(doc_or_tree)
+        return {alias: e.extract(tree) for alias, e in self.extractors.items()}

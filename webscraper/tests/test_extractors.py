@@ -3,7 +3,7 @@ import unittest
 
 import lxml.html
 
-from webscraper.extractors import FieldExtractor, RowExtractor, DatasetExtractor, ensure_element, scalar
+from webscraper.extractors import FieldExtractor, RowExtractor, DatasetExtractor, ensure_element, scalar, MultiExtractor
 
 
 class FieldExtractorTestCase(unittest.TestCase):
@@ -69,3 +69,20 @@ class UtilsTestCase(unittest.TestCase):
 
     def test_scalar_returns_1st_elem_only(self):
         rv = self.assertEqual(scalar(['a', 'b']), 'a')
+
+
+class MultiExtractorTestCase(unittest.TestCase):
+    def test_multiextractor_uses_same_tree(self):
+
+        class ExtractorStub:
+            def __init__(self):
+                self.extract_args = []
+
+            def extract(self, doc_or_tree):
+                self.extract_args.append(doc_or_tree)
+
+        e1, e2  =  ExtractorStub(), ExtractorStub()
+        extractors = {'one': e1, 'two': e2}
+        multi = MultiExtractor(extractors)
+        multi.extract('<xml></xml>')
+        self.assertEqual(e1.extract_args, e2.extract_args)
