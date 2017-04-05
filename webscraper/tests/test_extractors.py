@@ -24,6 +24,11 @@ class FieldExtractorTestCase(unittest.TestCase):
         rv = self.extractor.extract('<p><a>One</a><a>Two</a>')
         self.assertEqual(rv, 'One')
 
+    def test_regexp_selector(self):
+        self.extractor = FieldExtractor(selector="//a[re:test(@href, '\.(jpg|png)$')]/@href")
+        self.assertEqual(self.extractor.extract('<a href="1.jpg">1</a>'), '1.jpg')
+        self.assertEqual(self.extractor.extract('<a href="/dir/2.png">2</a>'), '/dir/2.png')
+
 
 class RowExtractorTestCase(unittest.TestCase):
 

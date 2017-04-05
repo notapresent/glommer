@@ -1,5 +1,7 @@
 import lxml.html
 
+RE_NS = "http://exslt.org/regular-expressions" # this is the namespace for the EXSLT extensions
+
 
 class RowExtractor:
 
@@ -9,7 +11,7 @@ class RowExtractor:
         self.selector = settings.pop('selector')
 
     def extract(self, doc_or_tree):
-        return ensure_element(doc_or_tree).xpath(self.selector)
+        return ensure_element(doc_or_tree).xpath(self.selector, namespaces={'re':RE_NS})
 
 
 class FieldExtractor(RowExtractor):
