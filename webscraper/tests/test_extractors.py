@@ -1,9 +1,10 @@
-import collections
 import unittest
 
 import lxml.html
 
-from webscraper.extractors import FieldExtractor, RowExtractor, DatasetExtractor, ensure_element, scalar, MultiExtractor
+from webscraper.extractors import (FieldExtractor, RowExtractor, DatasetExtractor, ensure_element, scalar,
+                                   MultiExtractor, xpath_tolower, ext_selector_fragment, make_video_extractor,
+                                   make_images_extractor, make_entry_extractor)
 
 
 class FieldExtractorTestCase(unittest.TestCase):
@@ -65,7 +66,6 @@ class DatasetExtractorTestCase(unittest.TestCase):
 
 
 class UtilsTestCase(unittest.TestCase):
-
     def test_ensure_element_returs_htmlelement(self):
         doc = '<p>test</p>'
         elem = lxml.html.fromstring(doc)
@@ -75,9 +75,13 @@ class UtilsTestCase(unittest.TestCase):
     def test_scalar_returns_1st_elem_only(self):
         rv = self.assertEqual(scalar(['a', 'b']), 'a')
 
+    def test_xpath_tolower(self):
+        rv = xpath_tolower('@href')
+        self.assertEqual(rv, "translate(@href, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')")
 
-class MultiExtractorTestCase(unittest.TestCase):
-    def test_multiextractor_uses_same_tree(self):
+
+class EntryExtractorsTestCase(unittest.TestCase):
+    def test_entry_extractor_uses_same_tree(self):
 
         class ExtractorStub:
             def __init__(self):
@@ -87,7 +91,34 @@ class MultiExtractorTestCase(unittest.TestCase):
                 self.extract_args.append(doc_or_tree)
 
         e1, e2  =  ExtractorStub(), ExtractorStub()
-        extractors = {'one': e1, 'two': e2}
-        multi = MultiExtractor(extractors)
-        multi.extract('<xml></xml>')
+        entry_extractor = make_entry_extractor()
+        entry_extractor.extract('<xml></xml>')
         self.assertEqual(e1.extract_args, e2.extract_args)
+
+    def test_image_extractor_extracts(self):
+        iex = make_images_extractor()
+        doc = '<a href="1.JPEG"><img src="1tn.jpg"></a> <a href="2.png"><img src="2t.jpg"></a>'
+        rv = iex.extract(doc)
+        self.assertEqual(len(rv), 2)
+        self.assertIn({'url': '1.JPEG'}, rv)
+        self.assertIn({'url': '2.png'}, rv)
+
+    def test_image_extractor_skips_non_images(self):
+        doc = '<a href="dir.jpg/file.html"></a><img src="tn.jpg"></a>'
+        iex = make_images_extractor()
+        rv = iex.extract(doc)
+        self.assertEqual(len(rv), 0)
+
+    def test_image_extractor_skips_text_only_links(self):
+        doc = '<a href="file.jpg"></a>No thumbnail here</a>'
+        iex = make_images_extractor()
+        rv = iex.extract(doc)
+        self.assertEqual(len(rv), 0)
+
+    def test_video_extractor_extracts(self):
+        vex = make_video_extractor()
+        doc = '<a href="1.avi"><img src="1tn.jpg"></a> <a href="2.Mpg"><img src="2t.jpg"></a>'
+        rv = vex.extract(doc)
+        self.assertEqual(len(rv), 2)
+        self.assertIn({'url': '1.avi'}, rv)
+        self.assertIn({'url': '2.Mpg'}, rv)

@@ -78,7 +78,7 @@ class Entry(Model):
     title = CharField(max_length=512)
     extra = CharField(max_length=2048, blank=True)
 
-    final_url = URLField(max_length=2048, blank=True)   # url after all redirects etc
+    final_url = URLField(max_length=2048, blank=True)   # url after all redirects etc   # TODO null=True
     items = JSONField(default=None, null=True, blank=True)        # TODO: Document this structure
 
     objects = EntryManager()

@@ -1,6 +1,6 @@
 from .models import Channel, Entry
 from .aiohttpdownloader import DownloadError
-from .aioscraper import AioHttpScraper as Scraper
+# from .aioscraper import AioHttpScraper as Scraper
 
 
 # class Scraper(AioHttpScraper):
