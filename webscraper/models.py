@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
+from django.contrib.postgres.fields import ArrayField, JSONField
 from django.db.models import Model, CharField, DateTimeField, ForeignKey, URLField, CASCADE, BooleanField
 from django.utils.crypto import get_random_string
-from jsonfield import JSONField
 
 from .managers import ChannelManager, EntryManager
 
@@ -73,7 +73,7 @@ class Entry(Model):
     extra = CharField(max_length=2048, blank=True)
 
     final_url = URLField(max_length=2048, blank=True)   # url after all redirects etc
-    items = JSONField(null=True, blank=True)        # TODO: Document this structure
+    items = JSONField(default=None, null=True, blank=True)        # TODO: Document this structure
 
     objects = EntryManager()
 
