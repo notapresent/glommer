@@ -5,7 +5,7 @@ import async_timeout
 
 
 DEFAULT_HEADERS = {'User-agent': 'Mozilla/5.0 Gecko/20100101 glommer/1.0'}
-DEFAULT_TIMEOUT = 6  # seconds
+DEFAULT_TIMEOUT = 4  # seconds
 
 
 class DownloadError(Exception):     # TODO differentiate retryable and non-retryable errors
@@ -32,12 +32,12 @@ async def fetch(url, sess, timeout=DEFAULT_TIMEOUT):
             body = await resp.text(errors='ignore')
 
     except aiohttp.client_exceptions.ClientResponseError as e:
-        message = getattr(e, 'message', e.__repr__())
+        message = getattr(e, 'message', repr(e))
         code = getattr(e, 'code')
         raise DownloadError(message, code=code) from e
 
     except aiohttp.client_exceptions.ClientError as e:
-        message = getattr(e, 'message', e.__repr__())
+        message = getattr(e, 'message', repr(e))
         raise DownloadError(message) from e
 
     except asyncio.TimeoutError as e:
