@@ -16,7 +16,7 @@ ENTRY_DEFAULTS = {
     'url': 'http://example.com/',
     'title': 'Test entry title',
     'extra': '',
-    'final_url': '',    # TODO None
+    'final_url': '',
     'items': {'images': ['1.jpg','2.jpg'], 'videos': ['1.avi', '2.avi']}
 }
 

@@ -1,6 +1,6 @@
-from django.contrib.auth.models import User
 from django.contrib.postgres.fields import JSONField
-from django.db.models import Model, CharField, DateTimeField, ForeignKey, URLField, CASCADE, BooleanField
+from django.db.models import (Model, CharField, DateTimeField, ForeignKey, URLField, CASCADE, BooleanField,
+                              IntegerField)
 from django.utils.crypto import get_random_string
 
 from .managers import ChannelManager, EntryManager
@@ -22,11 +22,24 @@ class Channel(Model):
         (I_1DAY, 'Every day'),
     )
 
+    ST_NEW = 0
+    ST_OK = 1
+    ST_WARNING = 2
+    ST_ERROR = 3
+
+    STATUS_CHOICES = (
+        (ST_NEW, 'New'),
+        (ST_OK, 'Ok'),
+        (ST_WARNING, 'Warning'),
+        (ST_ERROR, 'Error')
+    )
+
     title = CharField(max_length=512)
     interval = CharField(max_length=3, choices=INTERVAL_CHOICES, default=I_1DAY)
     enabled = BooleanField(default=True)
     url = URLField(max_length=2048)
     slug = CharField(max_length=32, editable=False, null=False, unique=True)
+    status = IntegerField(null=False, default=ST_NEW, choices=STATUS_CHOICES)
 
     row_selector = CharField(max_length=512)
     url_selector = CharField(max_length=512)
@@ -54,18 +67,31 @@ class Channel(Model):
 
 
 class Entry(Model):
-
     """Represents content entry"""
+
+    ST_NEW = 0
+    ST_OK = 1
+    ST_WARNING = 2
+    ST_ERROR = 3
+
+    STATUS_CHOICES = (
+        (ST_NEW, 'New'),
+        (ST_OK, 'Ok'),
+        (ST_WARNING, 'Warning'),
+        (ST_ERROR, 'Error')
+    )
 
     channel = ForeignKey(Channel, on_delete=CASCADE)
     added = DateTimeField('date added', auto_now_add=True)
-
+    status = IntegerField(null=False, default=ST_NEW, choices=STATUS_CHOICES)
     url = URLField(max_length=2048)  # url as seen in channel
     title = CharField(max_length=512)
     extra = CharField(max_length=2048, blank=True)
 
-    final_url = URLField(max_length=2048, blank=True)   # url after all redirects etc   # TODO null=True
-    items = JSONField(default=None, null=True, blank=True)        # TODO: Document this structure
+    final_url = URLField(max_length=2048, blank=True)   # url after all redirects etc, blank if no redirects
+
+    # {'media_type_1': ['url 1', 'url 2', ], 'media_type_2': ['url1', ...], ...}
+    items = JSONField(default=None, null=True, blank=True)
 
     objects = EntryManager()
 

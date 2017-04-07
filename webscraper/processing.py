@@ -4,7 +4,7 @@ from urllib.parse import urljoin
 from webscraper.extractors import ParseError
 from .aiohttpdownloader import DownloadError
 from .extractors import DatasetExtractor, ext_selector_fragment, EntryExtractor
-from .models import Entry
+from .models import Channel, Entry
 from .services import URLTracker
 
 IMAGE_EXTENSIONS = ['jpeg', 'jpg', 'jpe', 'webp', 'png']
@@ -22,16 +22,15 @@ def process_channel(channel, fut):
         entries = parse_channel(channel, response, html)
 
     except (DownloadError, ParseError) as e:
-        pass    # channel.status = Channel.ST_ERROR
+        channel.status = Channel.ST_ERROR
         new_entries = []
 
     else:
         tracker = URLTracker(channel)
         new_entries = tracker.track(entries)
-        # channel.status = Channel.ST_OK
+        channel.status = Channel.ST_OK
 
-    # channel.save()
-    # print('C', channel.title, len(new_entries))
+    channel.save()
     return new_entries
 
 
@@ -39,19 +38,20 @@ def process_entry(entry, fut, entry_extractor):
     try:
         resp, html = fut.result()
         actual_url = str(resp.url)
-        entry.final_url = actual_url if actual_url != entry.url else ''  # TODO None
-        entry.items = parse_entry(entry, html, entry_extractor)     # TODO: or None
-        # TODO make item urls absolute?
+        entry.final_url = actual_url if actual_url != entry.url else ''
+        entry.items = parse_entry(entry, html, entry_extractor) or None
 
     except (DownloadError, ParseError) as e:
-        print('E', entry.channel.id, entry.title, repr(e))
-        # entry.status = Entry.ST_ERROR
-        pass
+        # print('E', entry.channel.id, entry.title, repr(e))
+        entry.status = Entry.ST_ERROR
 
     else:
-        # print('E', entry.channel.id, entry.title, sum(len(urls) for urls in entry.items.values()))
-        # entry.status = Entry.ST_OK if entry.items else Entry.ST_WARNING
-        pass
+        # if entry.items:
+        #     num_items = sum([len(urls) for urls in entry.items.values()])
+        # else:
+        #     num_items = 0
+        # print('E', entry.channel.id, entry.title, num_items)
+        entry.status = Entry.ST_OK if entry.items else Entry.ST_WARNING
 
     return entry
 
@@ -124,7 +124,9 @@ def parse_entry(entry, html, entry_extractor):
     return rv
 
 
-def normalize_channel_row(row):  # TODO
+def normalize_channel_row(row):
+    for k, v in row.items():
+        row[k] = v.strip()
     return row
 
 
