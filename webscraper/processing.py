@@ -1,3 +1,4 @@
+import logging
 from urllib.parse import urljoin
 
 from webscraper.extractors import ParseError
@@ -22,38 +23,35 @@ def process_channel(channel, fut):
 
     except (DownloadError, ParseError) as e:
         pass    # channel.status = Channel.ST_ERROR
-        return []
+        new_entries = []
 
     else:
         tracker = URLTracker(channel)
         new_entries = tracker.track(entries)
-        return new_entries
         # channel.status = Channel.ST_OK
-        pass
 
-    finally:
-        pass
-        # channel.save()
-        print('C', channel.title, len(new_entries))
+    # channel.save()
+    # print('C', channel.title, len(new_entries))
+    return new_entries
 
 
 def process_entry(entry, fut, entry_extractor):
-    print('E', entry.channel.id, entry.title)
     try:
         resp, html = fut.result()
         actual_url = str(resp.url)
         entry.final_url = actual_url if actual_url != entry.url else '' # TODO None
-        items = parse_entry(entry, html, entry_extractor)
+        entry.items = parse_entry(entry, html, entry_extractor)     # TODO: or None
+        # TODO make item urls absolute?
 
-    except DownloadError as e:
-        pass    # entry.status = Entry.ST_ERROR
-
-    except ParseError as e:
-        pass    # entry.status = Entry.ST_ERROR
+    except (DownloadError, ParseError) as e:
+        print('E', entry.channel.id, entry.title, repr(e))
+        # entry.status = Entry.ST_ERROR
+        pass
 
     else:
-        entry.items = normalize_entry_items(items)
-        # entry.status = Entry.ST_OK if items else Entry.ST_WARN
+        # print('E', entry.channel.id, entry.title, sum(len(urls) for urls in entry.items.values()))
+        # entry.status = Entry.ST_OK if entry.items else Entry.ST_WARNING
+        pass
 
     return entry
 
@@ -112,17 +110,25 @@ def parse_channel(channel, resp, html):
 
 def parse_entry(entry, html, entry_extractor):
     base_url = entry.final_url or entry.url
+
     item_sets = entry_extractor.extract(html)
-    # import pdb; pdb.set_trace()
-    for alias, iset in item_sets.items():
-        if iset:
-            item_sets[alias] = [urljoin(str(base_url), str(url)) for url in iset]
 
-    return item_sets
+    rv = {}
+    for alias, item_set in item_sets.items():
 
+        if not item_set:
+            continue
 
-def normalize_entry_items(items): # TODO
-    return items
+        url_set = normalize_item_set([i['url'] for i in item_set])
+        rv[alias] = [urljoin(base_url, url) for url in url_set]
+
+    return rv
+
 
 def normalize_channel_row(row): # TODO
     return row
+
+
+def normalize_item_set(items):
+    return set(map(str.strip, items))
+
