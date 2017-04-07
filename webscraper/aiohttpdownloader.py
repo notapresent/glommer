@@ -9,6 +9,7 @@ DEFAULT_TIMEOUT = 6  # seconds
 
 
 class DownloadError(Exception):     # TODO differentiate retryable and non-retryable errors
+
     def __init__(self, message, **kw):
         super(DownloadError, self).__init__(message)
         self.message = message
@@ -55,8 +56,6 @@ async def make_session(loop, headers=None):
     else:
         sess_headers = DEFAULT_HEADERS
 
-
     conn = aiohttp.TCPConnector(verify_ssl=False, limit_per_host=1, loop=loop)
     session = aiohttp.ClientSession(loop=loop, connector=conn, headers=sess_headers)
     return session
-

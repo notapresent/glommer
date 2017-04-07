@@ -8,7 +8,6 @@ class InsertBuffer:
         self._buf = []
 
     def add(self, obj):
-
         """Add one record to buffer"""
 
         self._buf.append(obj)
@@ -17,16 +16,13 @@ class InsertBuffer:
             self.insert_batch()
 
     def insert_batch(self):
-
         """Remove one batch from buffer and insert to database"""
 
         chunk, self._buf = split_chunk(self._buf, self._batch_size)
         cls = type(chunk[0])
         cls.objects.bulk_create(chunk)
 
-
     def flush(self):
-
         """Insert all records from buffer to DB"""
 
         while self._buf:
@@ -43,7 +39,6 @@ class InsertBuffer:
 
 
 def split_chunk(lst, size):
-
     """Cut a chunk from a list. Returns (chunk, remaining_list)"""
 
     l = len(lst)

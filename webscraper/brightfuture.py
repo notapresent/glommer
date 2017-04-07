@@ -46,4 +46,3 @@ class BrightFuture:
             raise self._exception
 
         return self._result
-

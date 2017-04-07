@@ -39,7 +39,7 @@ def process_entry(entry, fut, entry_extractor):
     try:
         resp, html = fut.result()
         actual_url = str(resp.url)
-        entry.final_url = actual_url if actual_url != entry.url else '' # TODO None
+        entry.final_url = actual_url if actual_url != entry.url else ''  # TODO None
         entry.items = parse_entry(entry, html, entry_extractor)     # TODO: or None
         # TODO make item urls absolute?
 
@@ -69,7 +69,6 @@ def make_entry_extractor():
 
 
 def make_static_extractor(prefix, what, extensions, suffix):
-
     """Create extractor that extracts links to static files (images, video, etc)"""
 
     ext_fragment = ext_selector_fragment(what, extensions)
@@ -125,10 +124,9 @@ def parse_entry(entry, html, entry_extractor):
     return rv
 
 
-def normalize_channel_row(row): # TODO
+def normalize_channel_row(row):  # TODO
     return row
 
 
 def normalize_item_set(items):
     return set(map(str.strip, items))
-

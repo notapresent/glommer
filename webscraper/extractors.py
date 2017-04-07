@@ -6,7 +6,7 @@ import lxml.html
 from lxml.etree import XMLSyntaxError, XPathEvalError
 
 
-RE_NS = "http://exslt.org/regular-expressions" # this is the namespace for the EXSLT extensions
+RE_NS = "http://exslt.org/regular-expressions"  # this is the namespace for the EXSLT extensions
 
 
 class RowExtractor:
@@ -19,7 +19,7 @@ class RowExtractor:
     def extract(self, doc_or_tree):
         try:
             etree = ensure_element(doc_or_tree)
-            return etree.xpath(self.selector, namespaces={'re':RE_NS})
+            return etree.xpath(self.selector, namespaces={'re': RE_NS})
 
         except (XMLSyntaxError, XPathEvalError) as e:
             raise ParseError() from e
@@ -65,7 +65,6 @@ def ensure_element(doc_or_tree):
         raise ParseError('Invalid document ({})'.format(type(doc_or_tree))) from e
 
 
-
 def scalar(scalar_or_seq):
     try:
         return scalar_or_seq[0]
@@ -74,14 +73,12 @@ def scalar(scalar_or_seq):
 
 
 def xpath_tolower(what):
-
     """Uses XPath 1.0 translate() to emulate XPAth 2.0 lower-case()"""
 
     return "translate({}, '{}', '{}')".format(what, ascii_uppercase, ascii_lowercase)
 
 
 def ext_selector_fragment(what, extensions):
-
     """XPath selector fragment to match filenames"""
 
     what = xpath_tolower(what)
@@ -90,7 +87,6 @@ def ext_selector_fragment(what, extensions):
 
 
 def extensions_regex(extensions):
-
     """Regex to math certain filetypes"""
 
     return '\.({})$'.format('|'.join(extensions))
@@ -98,6 +94,7 @@ def extensions_regex(extensions):
 
 class EntryExtractor:
     """Set of extractors to operate on a single document"""
+
     def __init__(self):
         self.extractors = {}
 

@@ -40,7 +40,6 @@ class AioScraper:
         async with self._session:
             await asyncio.gather(*workers)
 
-
     def make_channel_workers(self):
         args = (self._channel_queue, self._entry_queue, self._session)
         return [channel_worker(*args) for _ in range(CHANNEL_POOL_SIZE)]

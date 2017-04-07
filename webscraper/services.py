@@ -28,4 +28,3 @@ def list_diff(old, new):
     oldset = set(old)
     newset = set(new)
     return newset - oldset, oldset - newset
-
