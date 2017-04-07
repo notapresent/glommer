@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand, CommandError
-from webscraper.services import Scraper
+from webscraper.models import Channel
+from webscraper.aioscraper import scrape
 
 
 class Command(BaseCommand):
@@ -7,6 +8,7 @@ class Command(BaseCommand):
     requires_migrations_checks = True
 
     def handle(self, *args, **options):
-        robbo = Scraper()
-        num_channels, num_entries = robbo.run()
-        self.stdout.write(self.style.SUCCESS('Processed %d entries from %d channels' % (num_entries, num_channels)))
+        channels = Channel.objects.enabled()
+        scrape(channels)
+        msg = 'Processed {} channels'.format(len(channels))
+        self.stdout.write(self.style.SUCCESS(msg))

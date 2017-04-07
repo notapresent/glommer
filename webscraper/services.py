@@ -1,11 +1,5 @@
-from .models import Channel, Entry
-from .aiohttpdownloader import DownloadError
-# from .aioscraper import AioHttpScraper as Scraper
+from .models import Entry
 
-
-# class Scraper(AioHttpScraper):
-#     pass
-#
 
 class URLTracker:
 
@@ -14,7 +8,7 @@ class URLTracker:
     def __init__(self, channel):
         self.channel = channel
 
-    def track(self, entries):
+    def track(self, entries):   # TODO split this method
         urls_to_ids = self.get_current_urls_to_ids()
         urls_to_entries = {e.url: e for e in entries}
         add_urls, remove_urls = list_diff(urls_to_ids.keys(), urls_to_entries.keys())

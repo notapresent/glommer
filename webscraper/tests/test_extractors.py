@@ -3,8 +3,7 @@ import unittest
 import lxml.html
 
 from webscraper.extractors import (FieldExtractor, RowExtractor, DatasetExtractor, ensure_element, scalar,
-                                   MultiExtractor, xpath_tolower, ext_selector_fragment, make_video_extractor,
-                                   make_images_extractor, make_entry_extractor)
+                                   EntryExtractor, xpath_tolower, ext_selector_fragment, ParseError)
 
 
 class FieldExtractorTestCase(unittest.TestCase):
@@ -17,7 +16,7 @@ class FieldExtractorTestCase(unittest.TestCase):
         self.assertEqual(rv, 'some text')
 
     def test_extract_accepts_lxml_htmlelement(self):
-        elem = lxml.html.fragment_fromstring('<a>test text</a>')
+        elem = '<a>test text</a>'
         rv = self.extractor.extract(elem)
         self.assertEqual(rv, 'test text')
 
@@ -30,6 +29,16 @@ class FieldExtractorTestCase(unittest.TestCase):
         self.assertEqual(self.extractor.extract('<a href="1.jpg">1</a>'), '1.jpg')
         self.assertEqual(self.extractor.extract('<a href="/dir/2.png">2</a>'), '/dir/2.png')
 
+    def test_ext_selector_fragment(self):
+        doc = '<img src="1.png"><img src="2.bmp"><img src="3.jpg">'
+        frag = ext_selector_fragment('@src', ['jpg', 'png'])
+        selector = '//img[{}]/@src'.format(frag)
+        ex = RowExtractor(selector=selector)
+        rv = ex.extract(doc)
+        self.assertEqual(len(rv), 2)
+        self.assertIn('1.png', rv)
+        self.assertIn('3.jpg', rv)
+
 
 class RowExtractorTestCase(unittest.TestCase):
 
@@ -41,9 +50,13 @@ class RowExtractorTestCase(unittest.TestCase):
         self.assertEqual(rv[0].text, 'One')
         self.assertEqual(rv[1].text, 'Two')
 
+    def test_extractor_raises_on_invalid_doc(self):
+        e = RowExtractor(selector="//p[@class='a']")
+        with self.assertRaises(ParseError):
+            e.extract('')
+
 
 class DatasetExtractorTestCase(unittest.TestCase):
-
     def setUp(self):
         self.doc = '''
         <div>
@@ -72,6 +85,10 @@ class UtilsTestCase(unittest.TestCase):
         self.assertIsInstance(ensure_element(doc), lxml.html.HtmlElement)
         self.assertIsInstance(ensure_element(elem), lxml.html.HtmlElement)
 
+    def test_ensure_element_raises_on_invalid_doc(self):
+        with self.assertRaises(ParseError):
+            ensure_element(None)
+
     def test_scalar_returns_1st_elem_only(self):
         rv = self.assertEqual(scalar(['a', 'b']), 'a')
 
@@ -80,7 +97,7 @@ class UtilsTestCase(unittest.TestCase):
         self.assertEqual(rv, "translate(@href, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')")
 
 
-class EntryExtractorsTestCase(unittest.TestCase):
+class EntryExtractorTestCase(unittest.TestCase):
     def test_entry_extractor_uses_same_tree(self):
 
         class ExtractorStub:
@@ -91,34 +108,8 @@ class EntryExtractorsTestCase(unittest.TestCase):
                 self.extract_args.append(doc_or_tree)
 
         e1, e2  =  ExtractorStub(), ExtractorStub()
-        entry_extractor = make_entry_extractor()
+        entry_extractor = EntryExtractor()
+        entry_extractor.add_extractor('1', e1)
+        entry_extractor.add_extractor('2', e2)
         entry_extractor.extract('<xml></xml>')
         self.assertEqual(e1.extract_args, e2.extract_args)
-
-    def test_image_extractor_extracts(self):
-        iex = make_images_extractor()
-        doc = '<a href="1.JPEG"><img src="1tn.jpg"></a> <a href="2.png"><img src="2t.jpg"></a>'
-        rv = iex.extract(doc)
-        self.assertEqual(len(rv), 2)
-        self.assertIn({'url': '1.JPEG'}, rv)
-        self.assertIn({'url': '2.png'}, rv)
-
-    def test_image_extractor_skips_non_images(self):
-        doc = '<a href="dir.jpg/file.html"></a><img src="tn.jpg"></a>'
-        iex = make_images_extractor()
-        rv = iex.extract(doc)
-        self.assertEqual(len(rv), 0)
-
-    def test_image_extractor_skips_text_only_links(self):
-        doc = '<a href="file.jpg"></a>No thumbnail here</a>'
-        iex = make_images_extractor()
-        rv = iex.extract(doc)
-        self.assertEqual(len(rv), 0)
-
-    def test_video_extractor_extracts(self):
-        vex = make_video_extractor()
-        doc = '<a href="1.avi"><img src="1tn.jpg"></a> <a href="2.Mpg"><img src="2t.jpg"></a>'
-        rv = vex.extract(doc)
-        self.assertEqual(len(rv), 2)
-        self.assertIn({'url': '1.avi'}, rv)
-        self.assertIn({'url': '2.Mpg'}, rv)

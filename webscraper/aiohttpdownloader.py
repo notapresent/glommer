@@ -4,12 +4,16 @@ import aiohttp
 import async_timeout
 
 
+DEFAULT_HEADERS = {'User-agent': 'Mozilla/5.0 Gecko/20100101 glommer/1.0'}
+DEFAULT_TIMEOUT = 2  # seconds
+
+
 class DownloadError(Exception):
     def __init__(self, *args, **kw):
         self.message = kw.get('message') or str(self)
 
 
-async def fetch(url, sess, timeout=2):
+async def fetch(url, sess, timeout=DEFAULT_TIMEOUT):
     try:
         with async_timeout.timeout(timeout):
             resp = await sess.get(url)
@@ -26,25 +30,18 @@ async def fetch(url, sess, timeout=2):
     return resp, body
 
 
-class Downloader:
-    """Encapsulates http client session"""
+async def make_session(loop, headers=None):
 
-    HEADERS = {'User-agent': 'Mozilla/5.0 Gecko/20100101 glommer/1.0'}
-    TIMEOUT = 2  # seconds
+    """Create and configure aiohttp.ClientSession"""
 
-    def __init__(self, loop=None):
-        self._loop = loop or asyncio.get_event_loop()
-        self._conn = aiohttp.TCPConnector(verify_ssl=False, limit_per_host=1)
-        self._session = aiohttp.ClientSession(loop=self._loop, connector=self._conn, headers=self.HEADERS)
+    if headers:
+        sess_headers = DEFAULT_HEADERS
+        sess_headers.update(headers)
+    else:
+        sess_headers = DEFAULT_HEADERS
 
-    async def __aenter__(self):
-        return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        await self.teardown()
+    conn = aiohttp.TCPConnector(verify_ssl=False, limit_per_host=1, loop=loop)
+    session = aiohttp.ClientSession(loop=loop, connector=conn, headers=sess_headers)
+    return session
 
-    async def get(self, url):
-        return await fetch(url, self._session, self.TIMEOUT)
-
-    async def teardown(self):
-        await self._session.close()

@@ -5,7 +5,7 @@ import aiohttp
 from django.test import TestCase
 from vcr_unittest import VCRMixin
 
-from webscraper.aiohttpdownloader import fetch, DownloadError, Downloader
+from webscraper.aiohttpdownloader import fetch, DownloadError, make_session
 
 
 class AioHttpDownloaderTestCase(VCRMixin, TestCase):
@@ -46,10 +46,16 @@ class AioHttpDownloaderTestCase(VCRMixin, TestCase):
 
         self.loop.run_until_complete(go())
 
-    def test_get_downloads(self):
-        async def go():
-            async with Downloader(loop=self.loop) as dl:
-                resp, body = await dl.get('http://httpbin.org/')
-            self.assertIn('ENDPOINTS', body)
+    def test_make_session(self):
+        headers = {'Boo': 'hoo'}
 
-        self.loop.run_until_complete(go())
+        async def go():
+            sess = await make_session(self.loop, headers=headers)
+            async with sess.get('http://httpbin.org/headers') as resp:
+                text = await resp.text()
+            await sess.close()
+            return text
+
+        text = self.loop.run_until_complete(go())
+        self.assertIn('Boo', text)
+        self.assertIn('hoo', text)

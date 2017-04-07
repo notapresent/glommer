@@ -1,13 +1,12 @@
-"""Functions related to parsing entries and channels"""
+"""Low-level html parsing primitives"""
 
 from string import ascii_uppercase, ascii_lowercase
 
 import lxml.html
+from lxml.etree import XMLSyntaxError, XPathEvalError
 
 
 RE_NS = "http://exslt.org/regular-expressions" # this is the namespace for the EXSLT extensions
-IMAGE_EXTENSIONS = ['jpeg', 'jpg', 'jpe', 'webp', 'png']
-VIDEO_EXTENSIONS = ['avi', 'qt', 'mov', 'wmv', 'mpg', 'mpeg', 'mp4', 'webm']
 
 
 class RowExtractor:
@@ -18,7 +17,12 @@ class RowExtractor:
         self.selector = settings.pop('selector')
 
     def extract(self, doc_or_tree):
-        return ensure_element(doc_or_tree).xpath(self.selector, namespaces={'re':RE_NS})
+        try:
+            etree = ensure_element(doc_or_tree)
+            return etree.xpath(self.selector, namespaces={'re':RE_NS})
+
+        except (XMLSyntaxError, XPathEvalError) as e:
+            raise ParseError() from e
 
 
 class FieldExtractor(RowExtractor):
@@ -50,25 +54,16 @@ class DatasetExtractor:
         return rv
 
 
-class MultiExtractor:
-
-    """Set of extractors to operate on a single document"""
-
-    def __init__(self):
-        self.extractors = {}
-
-    def add_extractor(self, alias, extractor):
-        self.extractors[alias] = extractor
-
-    def extract(self, doc_or_tree):
-        tree = ensure_element(doc_or_tree)
-        return {alias: e.extract(tree) for alias, e in self.extractors.items()}
-
-
 def ensure_element(doc_or_tree):
-    if isinstance(doc_or_tree, str):
+    if isinstance(doc_or_tree, lxml.html.HtmlElement):
+        return doc_or_tree
+
+    try:
         return lxml.html.fromstring(doc_or_tree)
-    return doc_or_tree
+
+    except (ValueError, TypeError) as e:
+        raise ParseError('Invalid document ({})'.format(type(doc_or_tree))) from e
+
 
 
 def scalar(scalar_or_seq):
@@ -101,26 +96,18 @@ def extensions_regex(extensions):
     return '\.({})$'.format('|'.join(extensions))
 
 
-def make_entry_extractor():
-    me = MultiExtractor()
-    me.add_extractor('images', make_images_extractor())
-    me.add_extractor('video', make_video_extractor())
-    return me
+class EntryExtractor:
+    """Set of extractors to operate on a single document"""
+    def __init__(self):
+        self.extractors = {}
+
+    def add_extractor(self, alias, extractor):
+        self.extractors[alias] = extractor
+
+    def extract(self, doc_or_tree):
+        tree = ensure_element(doc_or_tree)
+        return {alias: e.extract(tree) for alias, e in self.extractors.items()}
 
 
-def make_images_extractor():
-    fragment = ext_selector_fragment('@href', IMAGE_EXTENSIONS)
-    images_selector = '//a[{}]/img[@src]'.format(fragment)
-    return DatasetExtractor(
-        selector=images_selector,
-        fields={'url': {'selector': 'parent::a/@href'}}
-    )
-
-
-def make_video_extractor():
-    fragment = ext_selector_fragment('@href', VIDEO_EXTENSIONS)
-    video_selector = '//a[{}]/img[@src]'.format(fragment)
-    return DatasetExtractor(
-        selector=video_selector,
-        fields={'url': {'selector': 'parent::a/@href'}}
-    )
+class ParseError(Exception):
+    """Something unexpected happened while parsing html"""
