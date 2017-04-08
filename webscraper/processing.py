@@ -58,7 +58,6 @@ def process_entry(entry, fut, entry_extractor):
             logger.debug('%r - %d items' % (entry, num_items))
         else:
             entry.status = Entry.ST_WARNING
-            num_items = 0
             logger.info('%r - No items' % (entry, ))
 
     return entry
@@ -116,8 +115,6 @@ def parse_channel(channel, base_url, html):
 
 
 def parse_entry(entry, html, entry_extractor):
-    base_url = entry.final_url or entry.url
-
     item_sets = entry_extractor.extract(html)
 
     rv = {}
@@ -127,7 +124,7 @@ def parse_entry(entry, html, entry_extractor):
             continue
 
         url_set = normalize_item_set([i['url'] for i in item_set])
-        rv[alias] = [urljoin(base_url, url) for url in url_set]
+        rv[alias] = [urljoin(entry.real_url, url) for url in url_set]
 
     return rv
 

@@ -95,5 +95,9 @@ class Entry(Model):
 
     objects = EntryManager()
 
+    @property
+    def real_url(self):
+        return self.final_url if self.final_url else self.url
+
     def __str__(self):
         return self.title

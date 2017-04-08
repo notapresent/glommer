@@ -24,3 +24,9 @@ class EntryTestCase(TestCase):
 
         for fieldname, fieldvalue in ENTRY_DEFAULTS.items():
             self.assertEqual(getattr(entry, fieldname), fieldvalue)
+
+    def test_real_url(self):
+        e1 = create_entry(url='http://one.com')
+        e2 = create_entry(url='http://one.com', final_url='http://two.com')
+        self.assertEqual(e1.real_url, 'http://one.com')
+        self.assertEqual(e2.real_url, 'http://two.com')
