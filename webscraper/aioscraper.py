@@ -1,5 +1,6 @@
 """Task scheduling/queueing and scrape flow control"""
 import asyncio
+import logging
 from collections import deque
 
 from .brightfuture import BrightFuture
@@ -12,6 +13,9 @@ from .insbuffer import InsertBuffer
 CHANNEL_POOL_SIZE = 2
 ENTRY_POOL_SIZE = 32
 INSERT_BUFFER_SIZE = 150
+
+
+logger = logging.getLogger(__name__)
 
 
 class AioScraper:
