@@ -23,7 +23,6 @@ class AioScraper:
 
     def __init__(self, loop=None, session=None, insert_buffer=None, entry_queue=None, entry_extractor=None):
         self._loop = loop
-        self._session = session
         self._insert_buffer = insert_buffer
         self._entry_queue = entry_queue
         self._entry_extractor = entry_extractor
@@ -42,7 +41,7 @@ class AioScraper:
         workers = self.make_channel_workers() + self.make_entry_workers()
 
         async with self._session:
-            await asyncio.gather(*workers)
+            await asyncio.gather(loop=self._loop, *workers)
 
     def make_channel_workers(self):
         args = (self._channel_queue, self._entry_queue, self._session)
@@ -56,7 +55,7 @@ class AioScraper:
 def scrape(channels):
     loop = asyncio.get_event_loop()
     buf = InsertBuffer(INSERT_BUFFER_SIZE)
-    eq = asyncio.Queue(ENTRY_POOL_SIZE * 2)
+    eq = asyncio.Queue(ENTRY_POOL_SIZE * 2, loop=loop)
     ee = make_entry_extractor()
     scraper = AioScraper(loop=loop, insert_buffer=buf, entry_queue=eq, entry_extractor=ee)
     try:
