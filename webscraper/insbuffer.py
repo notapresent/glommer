@@ -1,3 +1,8 @@
+import logging
+
+
+logger = logging.getLogger(__name__)
+
 
 class InsertBuffer:
 
@@ -21,6 +26,7 @@ class InsertBuffer:
         chunk, self._buf = split_chunk(self._buf, self._batch_size)
         cls = type(chunk[0])
         cls.objects.bulk_create(chunk)
+        logger.debug('%r inserted %d records' % (self, len(chunk)))
 
     def flush(self):
         """Insert all records from buffer to DB"""

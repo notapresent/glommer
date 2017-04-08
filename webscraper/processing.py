@@ -16,6 +16,9 @@ STATIC_EXTRACTOR_SETTINGS = {
 }
 
 
+logger = logging.getLogger(__name__)
+
+
 def process_channel(channel, fut):
     try:
         response, html = fut.result()
@@ -25,11 +28,13 @@ def process_channel(channel, fut):
     except (DownloadError, ParseError) as e:
         channel.status = Channel.ST_ERROR
         new_entries = []
+        logger.warning('%r - %r' % (channel, e))
 
     else:
         tracker = URLTracker(channel)
         new_entries = tracker.track(entries)
         channel.status = Channel.ST_OK
+        logger.debug('%r - %d new entries' % (channel, len(new_entries)))
 
     channel.save()
     return new_entries
@@ -43,16 +48,18 @@ def process_entry(entry, fut, entry_extractor):
         entry.items = parse_entry(entry, html, entry_extractor) or None
 
     except (DownloadError, ParseError) as e:
-        # print('E', entry.channel.id, entry.title, repr(e))
         entry.status = Entry.ST_ERROR
+        logger.warning('%r - %r' % (entry, e))
 
     else:
-        # if entry.items:
-        #     num_items = sum([len(urls) for urls in entry.items.values()])
-        # else:
-        #     num_items = 0
-        # print('E', entry.channel.id, entry.title, num_items)
-        entry.status = Entry.ST_OK if entry.items else Entry.ST_WARNING
+        if entry.items:
+            entry.status = Entry.ST_OK
+            num_items = sum([len(urls) for urls in entry.items.values()])
+            logger.debug('%r - %d items' % (entry, num_items))
+        else:
+            Entry.ST_WARNING
+            num_items = 0
+            logger.info('%r - No items' % (entry, ))
 
     return entry
 
