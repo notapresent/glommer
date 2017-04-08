@@ -59,7 +59,10 @@ def scrape(channels):
     eq = asyncio.Queue(ENTRY_POOL_SIZE * 2)
     ee = make_entry_extractor()
     scraper = AioScraper(loop=loop, insert_buffer=buf, entry_queue=eq, entry_extractor=ee)
-    scraper.run(channels)
+    try:
+        scraper.run(channels)
+    finally:
+        loop.close()
 
 
 async def channel_worker(channel_queue, entry_queue, session):
