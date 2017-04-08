@@ -23,8 +23,8 @@ scrape:
 	python -u manage.py scrape
 
 test:
-	python manage.py test --keepdb
+	python manage.py test --keepdb --settings glommer.test_settings
 
 autotest:
-	find . -name '*.py' -not -path '*/\.*' | entr -d -c  python manage.py test --keepdb
+	find . -name '*.py' -not -path '*/\.*' | entr -d -c  python manage.py test --keepdb --settings glommer.test_settings
 
