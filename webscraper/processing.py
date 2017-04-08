@@ -57,7 +57,7 @@ def process_entry(entry, fut, entry_extractor):
             num_items = sum([len(urls) for urls in entry.items.values()])
             logger.debug('%r - %d items' % (entry, num_items))
         else:
-            Entry.ST_WARNING
+            entry.status = Entry.ST_WARNING
             num_items = 0
             logger.info('%r - No items' % (entry, ))
 
