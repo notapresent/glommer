@@ -1,7 +1,9 @@
 import unittest
 
-from webscraper.models import Channel
-from webscraper.processing import STATIC_EXTRACTOR_SETTINGS, make_static_extractor, make_channel_extractor
+from webscraper.models import Channel, Entry
+from webscraper.processing import (STATIC_EXTRACTOR_SETTINGS, make_static_extractor, make_channel_extractor,
+                                   process_channel, process_entry, parse_channel, parse_entry, normalize_item_set,
+                                   normalize_channel_row)
 
 from .util import CHANNEL_DEFAULTS
 
@@ -54,5 +56,31 @@ class ParsingTestCase(unittest.TestCase):
     def test_parse_entry_result(self):
         pass    # TODO
 
-    def test_parse_channel_result(self):
-        pass
+    @unittest.mock.patch('webscraper.processing.DatasetExtractor')
+    def test_parse_channel_result(self, dse):
+        channel = Channel(**CHANNEL_DEFAULTS)
+        base_url = 'http://ho.st/'
+        mock_extractor = unittest.mock.MagicMock()
+        mock_extractor.extract.return_value = [
+            {'url': '1.html', 'title': 'title 1', 'extra': 'extra 1'},
+            {'url': base_url + '2.html', 'title': 'title 2', 'extra': 'extra 2'}
+        ]
+        dse.return_value = mock_extractor
+        rv = list(parse_channel(channel, base_url, ''))
+        mock_extractor.extract.assert_called_once_with('')
+        self.assertEqual(len(rv), 2)
+        self.assertIsInstance(rv[0], Entry)
+        self.assertIsInstance(rv[1], Entry)
+
+
+    def test_normalize_channel_row(self):
+        row = {'url': ' http://host.com/ ', 'title': ' title ', 'extra': ' extra'}
+        rv = normalize_channel_row(row)
+        self.assertEqual(rv, {'url': 'http://host.com/', 'title': 'title', 'extra': 'extra'})
+
+    def test_normalize_item_set(self):
+        rv = normalize_item_set(['1',' 2',' 1 '])
+        self.assertEqual(len(rv), 2)
+        self.assertIn('1', rv)
+        self.assertIn('2', rv)
+

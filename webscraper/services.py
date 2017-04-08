@@ -1,14 +1,14 @@
 from .models import Entry
 
 
-class URLTracker:
+class URLTracker:       # TODO move this to EntryManager
 
     """Keeps track of processed URLs"""
 
     def __init__(self, channel):
         self.channel = channel
 
-    def track(self, entries):   # TODO split this method
+    def track(self, entries):
         urls_to_ids = self.get_current_urls_to_ids()
         urls_to_entries = {e.url: e for e in entries}
         add_urls, remove_urls = list_diff(urls_to_ids.keys(), urls_to_entries.keys())

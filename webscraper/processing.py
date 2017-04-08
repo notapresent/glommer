@@ -19,7 +19,8 @@ STATIC_EXTRACTOR_SETTINGS = {
 def process_channel(channel, fut):
     try:
         response, html = fut.result()
-        entries = parse_channel(channel, response, html)
+        base_url = str(response.url)
+        entries = parse_channel(channel, base_url, html)
 
     except (DownloadError, ParseError) as e:
         channel.status = Channel.ST_ERROR
@@ -95,8 +96,8 @@ def make_channel_extractor(channel):
     return DatasetExtractor(**args)
 
 
-def parse_channel(channel, resp, html):
-    base_url = str(resp.url)
+def parse_channel(channel, base_url, html):
+    """Generates sequence of entries from channel html"""
     extractor = make_channel_extractor(channel)
     rows = extractor.extract(html)
 
