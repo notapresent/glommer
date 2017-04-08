@@ -19,6 +19,7 @@ class ExtractorsTestCase(unittest.TestCase):
             <a href="3.txt"><img src="3t.jpg"></a>  <!-- Wrong filetype, skipped -->
             <a href="4.jpg">Just text</a>        <!-- No thumbnail, skipped -->
         '''
+
     def test_static_extractor_extracts_images(self):
         extractor = make_static_extractor(*STATIC_EXTRACTOR_SETTINGS['images'])
 
@@ -48,7 +49,6 @@ class ExtractorsTestCase(unittest.TestCase):
         self.assertEqual(row['title'], 'Title')
         self.assertEqual(row['url'], '1.html')
 
-
     def test_make_entry_extractor_returns_extractor(self):
         ee = make_entry_extractor()
         rv = ee.extract(self.IMAGES_TEST_DOC)
@@ -65,7 +65,7 @@ class FakeEntryExtractor:
 
     DEFAULT_EXTRACT_RV = {
         'images': [],
-        'videos': [{'url':'1.avi'}, {'url': 'http://ho.st/2.avi'}]
+        'videos': [{'url': '1.avi'}, {'url': 'http://ho.st/2.avi'}]
     }
 
     def __init__(self, extract_rv=None):
@@ -76,6 +76,7 @@ class FakeEntryExtractor:
 
 
 class ChannelProcessingTestCase(TestCase):
+
     def setUp(self):
         self.channel = Channel(**CHANNEL_DEFAULTS)
         self.response = FakeResponse()
@@ -108,6 +109,7 @@ class ChannelProcessingTestCase(TestCase):
 
 
 class EntryProcessingTestCase(unittest.TestCase):
+
     def setUp(self):
         self.channel = Channel(**CHANNEL_DEFAULTS)
         self.entry = Entry(channel=self.channel, **ENTRY_DEFAULTS)
@@ -143,6 +145,7 @@ class EntryProcessingTestCase(unittest.TestCase):
 
 
 class ParsingTestCase(unittest.TestCase):
+
     def test_parse_entry_result(self):
 
         ee = FakeEntryExtractor()
@@ -177,7 +180,7 @@ class ParsingTestCase(unittest.TestCase):
         self.assertEqual(rv, {'url': 'http://host.com/', 'title': 'title', 'extra': 'extra'})
 
     def test_normalize_item_set(self):
-        rv = normalize_item_set(['1',' 2',' 1 '])
+        rv = normalize_item_set(['1', ' 2', ' 1 '])
         self.assertEqual(len(rv), 2)
         self.assertIn('1', rv)
         self.assertIn('2', rv)

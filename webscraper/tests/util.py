@@ -17,7 +17,7 @@ ENTRY_DEFAULTS = {
     'title': 'Test entry title',
     'extra': '',
     'final_url': '',
-    'items': {'images': ['1.jpg','2.jpg'], 'videos': ['1.avi', '2.avi']}
+    'items': {'images': ['1.jpg', '2.jpg'], 'videos': ['1.avi', '2.avi']}
 }
 
 

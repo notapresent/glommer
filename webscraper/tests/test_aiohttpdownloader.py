@@ -9,6 +9,7 @@ from webscraper.aiohttpdownloader import fetch, DownloadError, make_session
 
 
 class AioHttpDownloaderTestCase(VCRMixin, TestCase):
+
     def setUp(self):
         super(AioHttpDownloaderTestCase, self).setUp()
         self.loop = asyncio.new_event_loop()

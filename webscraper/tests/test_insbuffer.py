@@ -8,6 +8,7 @@ from .util import create_channel, ENTRY_DEFAULTS
 
 
 class InsertBufferTestCase(TestCase):
+
     def setUp(self):
         self._old_debug, settings.DEBUG = settings.DEBUG, True
         self.channel = create_channel()
@@ -26,5 +27,3 @@ class InsertBufferTestCase(TestCase):
 
         self.assertEqual(len(self.channel.entry_set.all()), 8)
         self.assertEqual(num_queries, 2)
-
-

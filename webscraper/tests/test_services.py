@@ -8,7 +8,6 @@ from webscraper.services import URLTracker, list_diff
 from .util import create_channel, create_entry, ENTRY_DEFAULTS
 
 
-
 class URLTrackerTestCase(TestCase):
 
     def setUp(self):
@@ -47,5 +46,3 @@ class ServicesTestCase(TestCase):
         add, remove = list_diff(old, new)
         self.assertEqual(list(add), [3])
         self.assertEqual(list(remove), [1])
-
-

@@ -17,6 +17,7 @@ class ChannelTestCase(TestCase):
         self.assertNotEqual(channel.slug, '')
         self.assertIsNotNone(channel.slug)
 
+
 class EntryTestCase(TestCase):
 
     def test_model_fields(self):

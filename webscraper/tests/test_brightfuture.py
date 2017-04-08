@@ -4,6 +4,7 @@ from webscraper.brightfuture import BrightFuture, InvalidStateError
 
 
 class BrightFutureTestCase(unittest.TestCase):
+
     def setUp(self):
         self.fut = BrightFuture()
         self.result = object()

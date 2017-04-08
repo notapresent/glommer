@@ -57,6 +57,7 @@ class RowExtractorTestCase(unittest.TestCase):
 
 
 class DatasetExtractorTestCase(unittest.TestCase):
+
     def setUp(self):
         self.doc = '''
         <div>
@@ -79,6 +80,7 @@ class DatasetExtractorTestCase(unittest.TestCase):
 
 
 class UtilsTestCase(unittest.TestCase):
+
     def test_ensure_element_returs_htmlelement(self):
         doc = '<p>test</p>'
         elem = lxml.html.fromstring(doc)
@@ -98,16 +100,18 @@ class UtilsTestCase(unittest.TestCase):
 
 
 class EntryExtractorTestCase(unittest.TestCase):
+
     def test_entry_extractor_uses_same_tree(self):
 
         class ExtractorStub:
+
             def __init__(self):
                 self.extract_args = []
 
             def extract(self, doc_or_tree):
                 self.extract_args.append(doc_or_tree)
 
-        e1, e2  =  ExtractorStub(), ExtractorStub()
+        e1, e2 = ExtractorStub(), ExtractorStub()
         entry_extractor = EntryExtractor()
         entry_extractor.add_extractor('1', e1)
         entry_extractor.add_extractor('2', e2)
