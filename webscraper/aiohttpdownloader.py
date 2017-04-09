@@ -45,11 +45,9 @@ async def make_session(loop, headers=None, *args, **kw):
 
     """Create and configure aiohttp.ClientSession"""
 
-    if headers:
-        sess_headers = DEFAULT_HEADERS
+    sess_headers = DEFAULT_HEADERS
+    if headers is not None:
         sess_headers.update(headers)
-    else:
-        sess_headers = DEFAULT_HEADERS
 
     timeout = kw.pop('timeout', DEFAULT_TIMEOUT)
 

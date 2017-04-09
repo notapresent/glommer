@@ -61,10 +61,17 @@ class AioHttpDownloaderTestCase(VCRMixin, AsyncioTestCase):
 
 class TimeoutTestCase(AsyncioTestCase):
     @unittest.skipIf('CONTINUOUS_INTEGRATION' not in os.environ, 'Slow, CI only')
-    def test_make_session_sets_timeout(self):
+    def test_make_session_sets_read_timeout(self):
         coro = with_session(fetch, loop=self.loop, timeout=1)
         with self.assertRaises(DownloadError):
             self.loop.run_until_complete(coro('http://httpbin.org/delay/5'))
+
+    @unittest.skipIf('CONTINUOUS_INTEGRATION' not in os.environ, 'Slow, CI only')
+    def test_make_session_sets_connect_timeout(self):
+        coro = with_session(fetch, loop=self.loop, timeout=1)
+        with self.assertRaises(DownloadError):
+            # Trying to connect to non-routeable ip address
+            self.loop.run_until_complete(coro('http://10.255.255.1/'))
 
 
 def with_session(f, *, loop, **sess_kw):
