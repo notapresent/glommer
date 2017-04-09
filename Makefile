@@ -29,7 +29,7 @@ autotest:
 	find . -name '*.py' -not -path '*/\.*' | entr -d -c  python manage.py test --keepdb --settings glommer.test_settings
 
 coverage:
-	coverage run manage.py test --keepdb --settings glommer.test_settings
+	CONTINUOUS_INTEGRATION=1 coverage run manage.py test --keepdb --settings glommer.test_settings
 	coverage report --skip-covered
 	coverage html --skip-covered
 	xdg-open htmlcov/index.html
