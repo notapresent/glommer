@@ -28,3 +28,7 @@ test:
 autotest:
 	find . -name '*.py' -not -path '*/\.*' | entr -d -c  python manage.py test --keepdb --settings glommer.test_settings
 
+coverage:
+	coverage run manage.py test --keepdb --settings glommer.test_settings
+	coverage report --skip-covered
+

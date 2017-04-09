@@ -1,2 +1,5 @@
 ignore:
   - "glommer/wsgi.py"
+  - "glommer/urls.py"
+  - "**/tests/.*"
+  - "manage.py"
