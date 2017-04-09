@@ -5,7 +5,7 @@ from webscraper.models import Channel, Entry
 from webscraper.processing import (STATIC_EXTRACTOR_SETTINGS, make_static_extractor, make_channel_extractor,
                                    process_channel, process_entry, parse_channel, parse_entry, normalize_item_set,
                                    normalize_channel_row, make_entry_extractor)
-from webscraper.brightfuture import BrightFuture
+from webscraper.futurelite import FutureLite
 from webscraper.aiohttpdownloader import DownloadError
 
 from django.test import TestCase
@@ -80,7 +80,7 @@ class ChannelProcessingTestCase(TestCase):
     def setUp(self):
         self.channel = Channel(**CHANNEL_DEFAULTS)
         self.response = FakeResponse()
-        self.future = BrightFuture()
+        self.future = FutureLite()
         self.future.set_result((self.response, '<html></html>'))
 
     def test_sets_status_ok(self):
@@ -88,7 +88,7 @@ class ChannelProcessingTestCase(TestCase):
         self.assertEqual(self.channel.status, Channel.ST_OK)
 
     def test_sets_status_error(self):
-        badfuture = BrightFuture()
+        badfuture = FutureLite()
         badfuture.set_exception(DownloadError('test'))
         process_channel(self.channel, badfuture)
         self.assertEqual(self.channel.status, Channel.ST_ERROR)
@@ -113,7 +113,7 @@ class EntryProcessingTestCase(unittest.TestCase):
     def setUp(self):
         self.channel = Channel(**CHANNEL_DEFAULTS)
         self.entry = Entry(channel=self.channel, **ENTRY_DEFAULTS)
-        self.future = BrightFuture()
+        self.future = FutureLite()
         self.future.set_result((FakeResponse(), ''))
         self.extractor = FakeEntryExtractor()
 
@@ -127,7 +127,7 @@ class EntryProcessingTestCase(unittest.TestCase):
         self.assertEqual(self.entry.status, Entry.ST_WARNING)
 
     def test_sets_status_error(self):
-        future = BrightFuture()
+        future = FutureLite()
         future.set_exception(DownloadError('test'))
         process_entry(self.entry, future, self.extractor)
         self.assertEqual(self.entry.status, Entry.ST_ERROR)

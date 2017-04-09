@@ -6,7 +6,7 @@ from collections import deque
 import async_timeout
 
 
-from .brightfuture import BrightFuture
+from .futurelite import FutureLite
 from .aiohttpdownloader import DownloadError, fetch, make_session
 from .processing import process_channel, process_entry, make_entry_extractor
 from .insbuffer import InsertBuffer
@@ -76,7 +76,7 @@ async def channel_worker(channel_queue, entry_queue, session):
             await entry_queue.put(None)
             continue
 
-        fut = BrightFuture()
+        fut = FutureLite()
         await download_to_future(fut, session, channel.url)
         new_entries = process_channel(channel, fut)
 
@@ -91,7 +91,7 @@ async def entry_worker(entry_queue, session, buffer, entry_extractor):
         if entry is None:
             break
 
-        fut = BrightFuture()
+        fut = FutureLite()
         await download_to_future(fut, session, entry.url)
         process_entry(entry, fut, entry_extractor)
         buffer.add(entry)

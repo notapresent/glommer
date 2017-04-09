@@ -1,12 +1,12 @@
 import unittest
 
-from webscraper.brightfuture import BrightFuture, InvalidStateError
+from webscraper.futurelite import FutureLite, InvalidStateError
 
 
 class BrightFutureTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.fut = BrightFuture()
+        self.fut = FutureLite()
         self.result = object()
 
     def test_returns_result(self):
@@ -20,11 +20,27 @@ class BrightFutureTestCase(unittest.TestCase):
         with self.assertRaises(type(exc)):
             self.fut.result()
 
-    def test_raises_if_result_set(self):
+    def test_set_result_raises_if_result_set(self):
         self.fut.set_result(self.result)
 
         with self.assertRaises(InvalidStateError):
             self.fut.set_result(self.result)
 
+    def test_set_exception_raises_if_result_set(self):
+        self.fut.set_result(self.result)
+
         with self.assertRaises(InvalidStateError):
             self.fut.set_exception(Exception())
+
+    def test_set_result_raises_if_exception_set(self):
+        self.fut.set_exception(Exception())
+
+        with self.assertRaises(InvalidStateError):
+            self.fut.set_result(self.result)
+
+    def test_set_exception_raises_if_exception_set(self):
+        self.fut.set_exception(Exception())
+
+        with self.assertRaises(InvalidStateError):
+            self.fut.set_exception(Exception())
+

@@ -9,7 +9,7 @@ class InvalidStateError(Error):
     """The operation is not allowed in this state."""
 
 
-class BrightFuture:
+class FutureLite:
     # Class variables serving as defaults for instance variables.
     _state = _PENDING
     _result = None
@@ -19,7 +19,8 @@ class BrightFuture:
 
     def set_exception(self, exception):
         if self.done():
-            raise InvalidStateError('Invalid future state: {}'.format(self._state))
+            self._raise_for_state()
+
         self._exception = exception
         self._state = _FINISHED
 
@@ -33,16 +34,20 @@ class BrightFuture:
         If the future is already done when this method is called, raises
         InvalidStateError.
         """
-        if self._state != _PENDING:
-            raise InvalidStateError('Invalid future state: {}'.format(self._state))
+        if self.done():
+            self._raise_for_state()
+
         self._result = result
         self._state = _FINISHED
 
     def result(self):
-        if self._state != _FINISHED:
+        if not self.done():
             raise InvalidStateError('Result is not ready.')
 
         if self._exception is not None:
             raise self._exception
 
         return self._result
+
+    def _raise_for_state(self):
+        raise InvalidStateError('Invalid future state: {}'.format(self._state))
