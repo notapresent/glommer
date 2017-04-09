@@ -46,9 +46,4 @@ class InsertBuffer:
 
 def split_chunk(lst, size):
     """Cut a chunk from a list. Returns (chunk, remaining_list)"""
-
-    l = len(lst)
-    if l <= size:
-        return lst, []
-    else:
-        return lst[:size], lst[size:]
+    return lst[:size], lst[size:]
