@@ -28,7 +28,7 @@ async def fetch(url, sess):
 
     except aiohttp.client_exceptions.ClientError as e:
         message = getattr(e, 'message', repr(e))
-        code = getattr(e, 'code')
+        code = getattr(e, 'code', None)
         raise DownloadError(message, code=code) from e
 
     except asyncio.TimeoutError as e:
