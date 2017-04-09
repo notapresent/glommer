@@ -5,9 +5,8 @@ from collections import deque
 
 import async_timeout
 
-
 from .futurelite import FutureLite
-from .aiohttpdownloader import DownloadError, fetch, make_session
+from .aiohttpdownloader import make_session, download_to_future
 from .processing import process_channel, process_entry, make_entry_extractor
 from .insbuffer import InsertBuffer
 
@@ -77,7 +76,7 @@ async def channel_worker(channel_queue, entry_queue, session):
             continue
 
         fut = FutureLite()
-        await download_to_future(fut, session, channel.url)
+        await download_to_future(channel.url, fut, session=session)
         new_entries = process_channel(channel, fut)
 
         for entry in new_entries:
@@ -92,16 +91,6 @@ async def entry_worker(entry_queue, session, buffer, entry_extractor):
             break
 
         fut = FutureLite()
-        await download_to_future(fut, session, entry.url)
+        await download_to_future(entry.url, fut, session=session)
         process_entry(entry, fut, entry_extractor)
         buffer.add(entry)
-
-
-async def download_to_future(fut, session, url):
-    """Fetch and store result or exception in future"""
-    try:
-        resp, html = await fetch(url, session)
-        fut.set_result((resp, html))
-
-    except (DownloadError) as e:
-        fut.set_exception(e)

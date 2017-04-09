@@ -20,9 +20,9 @@ class DownloadError(Exception):     # TODO differentiate retryable and non-retry
         return "<%s(%s)>" % (self.__class__.__name__, ', '.join(args))
 
 
-async def fetch(url, sess):
+async def fetch(url, *, session):
     try:
-        async with await sess.get(url, timeout=None) as resp:   # timeout=None to use session's timeout
+        async with await session.get(url, timeout=None) as resp:   # timeout=None to use session's timeout
             resp.raise_for_status()
             body = await resp.text(errors='ignore')
 
@@ -59,3 +59,13 @@ async def make_session(loop, headers=None, *args, **kw):
                                     read_timeout=timeout, conn_timeout=timeout)
 
     return session
+
+
+async def download_to_future(url, fut, *, session):
+    """Fetch and store result or exception in future"""
+    try:
+        resp, html = await fetch(url, session=session)
+        fut.set_result((resp, html))
+
+    except (DownloadError) as e:
+        fut.set_exception(e)

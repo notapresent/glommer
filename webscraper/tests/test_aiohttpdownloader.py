@@ -1,78 +1,78 @@
-import os
+from functools import wraps
 import asyncio
+import os
 import unittest
 
-import aiohttp
-import async_timeout
+from vcr_unittest import VCRMixin
 
-from vcr_unittest import VCRTestCase
-
-from webscraper.aiohttpdownloader import fetch, DownloadError, make_session
+from webscraper.aiohttpdownloader import fetch, DownloadError, make_session, download_to_future
+from webscraper.futurelite import FutureLite
 
 
-class AioHttpDownloaderTestCase(VCRTestCase):
-
+class AsyncioTestCase(unittest.TestCase):
     def setUp(self):
-        super(AioHttpDownloaderTestCase, self).setUp()
+        super(AsyncioTestCase, self).setUp()
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
 
     def tearDown(self):
         self.loop.close()
+        super(AsyncioTestCase, self).tearDown()
 
+
+class AioHttpDownloaderTestCase(VCRMixin, AsyncioTestCase):
     def test_fetch_downloads(self):
-        coro = make_session_and_fetch(self.loop, 'http://httpbin.org/')
-        resp, body = self.loop.run_until_complete(coro)
+        coro = with_session(fetch, loop=self.loop)
+        resp, body = self.loop.run_until_complete(coro('http://httpbin.org/'))
+        self.assertEquals(resp.status, 200)
         self.assertIn('ENDPOINTS', body)
 
-    def test_get_raises_on_404(self):
-        coro = make_session_and_fetch(self.loop, 'http://httpbin.org/status/404')
+    def test_get_raises_404(self):
+        coro = with_session(fetch, loop=self.loop)
         with self.assertRaises(DownloadError):
-            self.loop.run_until_complete(coro)
+            self.loop.run_until_complete(coro('http://httpbin.org/status/404'))
 
     def test_get_raises_on_nx_domain(self):
-        coro = make_session_and_fetch(self.loop, 'http://some-non-existing-domaain.net')
+        coro = with_session(fetch, loop=self.loop)
         with self.assertRaises(DownloadError):
-            self.loop.run_until_complete(coro)
-
-    def test_make_session_returns_working_session(self):
-        coro = make_session_and_get(self.loop, 'http://httpbin.org/headers')
-        resp, text = self.loop.run_until_complete(coro)
-        self.assertEquals(resp.status, 200)
-        self.assertIn('headers', text)
+            self.loop.run_until_complete(coro('http://some-non-existing-domaain.net'))
 
     def test_make_session_sets_headers(self):
         headers = {'Boo': 'hoo'}
-        coro = make_session_and_get(self.loop, 'http://httpbin.org/headers', headers=headers)
-        resp, text = self.loop.run_until_complete(coro)
+        coro = with_session(fetch, loop=self.loop, headers=headers)
+        resp, text = self.loop.run_until_complete(coro('http://httpbin.org/headers'))
         self.assertIn('"Boo": "hoo"', text)
 
+    def test_download_to_future_sets_result(self):
+        fut = FutureLite()
+        coro = with_session(download_to_future, loop=self.loop)
+        self.loop.run_until_complete(coro('http://httpbin.org/', fut))
+        resp, text = fut.result()
+        self.assertEqual(resp.status, 200)
+        self.assertIn('ENDPOINTS', text)
 
-class TimeoutTestCase(unittest.TestCase):
-    def setUp(self):
-        super(TimeoutTestCase, self).setUp()
-        self.loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(self.loop)
-
-    @unittest.skipIf('CONTINUOUS_INTEGRATION' not in os.environ, 'CI only')
-    def test_timeout(self):
-        coro = make_session_and_fetch(self.loop, 'http://httpbin.org/delay/5', timeout=1)
+    def test_download_to_future_sets_exception(self):
+        fut = FutureLite()
+        coro = with_session(download_to_future, loop=self.loop)
+        self.loop.run_until_complete(coro('http://httpbin.org/status/404', fut))
         with self.assertRaises(DownloadError):
-            self.loop.run_until_complete(coro)
-
-    def tearDown(self):
-        self.loop.close()
+            fut.result()
 
 
-async def make_session_and_get(loop, url, *args, **kw):
-    sess = await make_session(loop=loop, *args, **kw)
-    async with sess, sess.get(url) as resp:
-        text = await resp.text()
-    return resp, text
+class TimeoutTestCase(AsyncioTestCase):
+    @unittest.skipIf('CONTINUOUS_INTEGRATION' not in os.environ, 'Slow, CI only')
+    def test_make_session_sets_timeout(self):
+        coro = with_session(fetch, loop=self.loop, timeout=1)
+        with self.assertRaises(DownloadError):
+            self.loop.run_until_complete(coro('http://httpbin.org/delay/5'))
 
 
-async def make_session_and_fetch(loop, url, *args, **kw):
-    sess = await make_session(loop=loop, *args, **kw)
-    async with sess:
-        resp, text = await fetch(url, sess)
-    return resp, text
+def with_session(f, *, loop, **sess_kw):
+    """Create session and call function with it passed as keyword argument"""
+    @wraps(f)
+    async def wrapper(*args, **kw):
+        session = await make_session(loop=loop, **sess_kw)
+        with session:
+            return await f(*args, **kw, session=session)
+
+    return wrapper
