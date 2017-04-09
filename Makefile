@@ -31,4 +31,5 @@ autotest:
 coverage:
 	coverage run manage.py test --keepdb --settings glommer.test_settings
 	coverage report --skip-covered
-
+	coverage html --skip-covered
+	xdg-open htmlcov/index.html
