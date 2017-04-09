@@ -3,6 +3,9 @@ import asyncio
 import logging
 from collections import deque
 
+import async_timeout
+
+
 from .brightfuture import BrightFuture
 from .aiohttpdownloader import DownloadError, fetch, make_session
 from .processing import process_channel, process_entry, make_entry_extractor
@@ -13,7 +16,7 @@ from .insbuffer import InsertBuffer
 CHANNEL_POOL_SIZE = 2
 ENTRY_POOL_SIZE = 32
 INSERT_BUFFER_SIZE = 150
-
+GLOBAL_TIMEOUT = 60 * 5
 
 logger = logging.getLogger(__name__)
 
@@ -40,8 +43,9 @@ class AioScraper:
         self._session = await make_session(self._loop)
         workers = self.make_channel_workers() + self.make_entry_workers()
 
-        async with self._session:
-            await asyncio.gather(loop=self._loop, *workers)
+        with async_timeout.timeout(GLOBAL_TIMEOUT):
+            async with self._session:
+                await asyncio.gather(loop=self._loop, *workers)
 
     def make_channel_workers(self):
         args = (self._channel_queue, self._entry_queue, self._session)
