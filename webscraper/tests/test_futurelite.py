@@ -44,3 +44,6 @@ class BrightFutureTestCase(unittest.TestCase):
         with self.assertRaises(InvalidStateError):
             self.fut.set_exception(Exception())
 
+    def test_result_raises_if_pending(self):
+        with self.assertRaises(InvalidStateError):
+            self.fut.result()
