@@ -101,6 +101,9 @@ class UtilsTestCase(unittest.TestCase):
     def test_first_or_none_returns_none_on_empty_seq(self):
         self.assertEquals(first_or_none([]), None)
 
+    def test_first_or_none_returns_string_as_is(self):
+        s = 'Test'
+        self.assertIs(first_or_none(s), s)
 
     def test_xpath_tolower(self):
         rv = xpath_tolower('@href')
@@ -125,3 +128,8 @@ class EntryExtractorTestCase(unittest.TestCase):
         entry_extractor.add_extractor('2', e2)
         entry_extractor.extract('<xml></xml>')
         self.assertEqual(e1.extract_args, e2.extract_args)
+
+    def test_extract_field_extracts(self):
+        ee = EntryExtractor()
+        val = ee.extract_field('//title/text()', '<html><title>Test</title></html>')
+        self.assertEqual(val, 'Test')

@@ -3,7 +3,8 @@
 from string import ascii_uppercase, ascii_lowercase
 
 import lxml.html
-from lxml.etree import XMLSyntaxError, XPathEvalError
+from lxml.etree import XMLSyntaxError, XPathEvalError, ParserError
+
 
 
 RE_NS = "http://exslt.org/regular-expressions"  # this is the namespace for the EXSLT extensions
@@ -61,11 +62,15 @@ def ensure_element(doc_or_tree):
     try:
         return lxml.html.fromstring(doc_or_tree)
 
-    except (ValueError, TypeError) as e:
-        raise ParseError('Invalid document ({})'.format(type(doc_or_tree))) from e
+    except (ValueError, TypeError, ParserError) as e:
+        message = 'Invalid document {} - {!r}'.format(type(doc_or_tree), e)
+        raise ParseError(message) from e
 
 
 def first_or_none(scalar_or_seq):
+    if isinstance(scalar_or_seq, str):
+        return scalar_or_seq
+
     try:
         return next(iter(scalar_or_seq or []), None)
 
@@ -105,6 +110,11 @@ class EntryExtractor:
     def extract(self, doc_or_tree):
         tree = ensure_element(doc_or_tree)
         return {alias: e.extract(tree) for alias, e in self.extractors.items()}
+
+    def extract_field(self, sel, doc):
+        ex = FieldExtractor(selector=sel)
+        elem = ensure_element(doc)
+        return first_or_none(ex.extract(elem))
 
 
 class ParseError(Exception):
