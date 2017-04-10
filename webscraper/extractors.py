@@ -31,7 +31,7 @@ class FieldExtractor(RowExtractor):
 
     def extract(self, fragment):
         value = super(FieldExtractor, self).extract(fragment)
-        return scalar(value)
+        return first_or_none(value)
 
 
 class DatasetExtractor:
@@ -65,11 +65,11 @@ def ensure_element(doc_or_tree):
         raise ParseError('Invalid document ({})'.format(type(doc_or_tree))) from e
 
 
-def scalar(scalar_or_seq):
+def first_or_none(scalar_or_seq):
     try:
-        return scalar_or_seq[0]
+        return next(iter(scalar_or_seq or []), None)
 
-    except (IndexError, TypeError):
+    except TypeError:
         return scalar_or_seq
 
 

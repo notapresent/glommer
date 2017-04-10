@@ -2,7 +2,7 @@ import unittest
 
 import lxml.html
 
-from webscraper.extractors import (FieldExtractor, RowExtractor, DatasetExtractor, ensure_element, scalar,
+from webscraper.extractors import (FieldExtractor, RowExtractor, DatasetExtractor, ensure_element, first_or_none,
                                    EntryExtractor, xpath_tolower, ext_selector_fragment, ParseError)
 
 
@@ -91,12 +91,16 @@ class UtilsTestCase(unittest.TestCase):
         with self.assertRaises(ParseError):
             ensure_element(None)
 
-    def test_scalar_returns_1st_elem_only(self):
-        self.assertEqual(scalar(['a', 'b']), 'a')
+    def test_first_or_none_returns_1st_elem_only(self):
+        self.assertEqual(first_or_none(['a', 'b']), 'a')
 
-    def test_scalar_returns_scalar_as_is(self):
+    def test_first_or_none_returns_scalar_as_is(self):
         o = object()
-        self.assertIs(o, scalar(o))
+        self.assertIs(o, first_or_none(o))
+
+    def test_first_or_none_returns_none_on_empty_seq(self):
+        self.assertEquals(first_or_none([]), None)
+
 
     def test_xpath_tolower(self):
         rv = xpath_tolower('@href')
