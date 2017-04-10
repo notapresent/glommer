@@ -11,9 +11,8 @@ from .insbuffer import InsertBuffer
 
 # Default values
 CHANNEL_POOL_SIZE = 2
-ENTRY_POOL_SIZE = 16
+ENTRY_POOL_SIZE = 32
 INSERT_BUFFER_SIZE = 150
-GLOBAL_TIMEOUT = 60 * 5
 
 logger = logging.getLogger(__name__)
 
@@ -34,9 +33,6 @@ class AioScraper:
 
         try:
             self._loop.run_until_complete(self._run())
-
-        except KeyboardInterrupt:
-            import pdb; pdb.set_trace()
 
         finally:
             self._insert_buffer.flush()
