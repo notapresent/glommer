@@ -68,7 +68,8 @@ def ensure_element(doc_or_tree):
 def scalar(scalar_or_seq):
     try:
         return scalar_or_seq[0]
-    except IndexError:
+
+    except (IndexError, TypeError):
         return scalar_or_seq
 
 

@@ -92,7 +92,11 @@ class UtilsTestCase(unittest.TestCase):
             ensure_element(None)
 
     def test_scalar_returns_1st_elem_only(self):
-        rv = self.assertEqual(scalar(['a', 'b']), 'a')
+        self.assertEqual(scalar(['a', 'b']), 'a')
+
+    def test_scalar_returns_scalar_as_is(self):
+        o = object()
+        self.assertIs(o, scalar(o))
 
     def test_xpath_tolower(self):
         rv = xpath_tolower('@href')
