@@ -3,8 +3,6 @@ import asyncio
 import logging
 from collections import deque
 
-import async_timeout
-
 from .futurelite import FutureLite
 from .aiohttpdownloader import make_session, download_to_future
 from .processing import process_channel, process_entry, make_entry_extractor
@@ -13,7 +11,7 @@ from .insbuffer import InsertBuffer
 
 # Default values
 CHANNEL_POOL_SIZE = 2
-ENTRY_POOL_SIZE = 32
+ENTRY_POOL_SIZE = 16
 INSERT_BUFFER_SIZE = 150
 GLOBAL_TIMEOUT = 60 * 5
 
@@ -32,9 +30,14 @@ class AioScraper:
 
     def run(self, channels):
         self._channel_queue = deque(channels)
-        self._channel_queue .extend([None] * ENTRY_POOL_SIZE)   # Signal entry workers to shut down
+        self._channel_queue.extend([None] * CHANNEL_POOL_SIZE)   # Signal channel workers to shut down
+
         try:
             self._loop.run_until_complete(self._run())
+
+        except KeyboardInterrupt:
+            import pdb; pdb.set_trace()
+
         finally:
             self._insert_buffer.flush()
 
@@ -42,17 +45,16 @@ class AioScraper:
         self._session = await make_session(self._loop)
         workers = self.make_channel_workers() + self.make_entry_workers()
 
-        with async_timeout.timeout(GLOBAL_TIMEOUT):
-            async with self._session:
-                await asyncio.gather(loop=self._loop, *workers)
+        async with self._session:
+            await asyncio.gather(*workers, loop=self._loop)
 
     def make_channel_workers(self):
         args = (self._channel_queue, self._entry_queue, self._session)
-        return [channel_worker(*args) for _ in range(CHANNEL_POOL_SIZE)]
+        return [channel_worker(i, *args) for i in range(CHANNEL_POOL_SIZE)]
 
     def make_entry_workers(self):
         args = (self._entry_queue, self._session, self._insert_buffer, self._entry_extractor)
-        return [entry_worker(*args) for _ in range(ENTRY_POOL_SIZE)]
+        return [entry_worker(i, *args) for i in range(ENTRY_POOL_SIZE)]
 
 
 def scrape(channels):
@@ -61,19 +63,22 @@ def scrape(channels):
     eq = asyncio.Queue(ENTRY_POOL_SIZE * 2, loop=loop)
     ee = make_entry_extractor()
     scraper = AioScraper(loop=loop, insert_buffer=buf, entry_queue=eq, entry_extractor=ee)
+
     try:
         scraper.run(channels)
+
     finally:
         loop.close()
 
 
-async def channel_worker(channel_queue, entry_queue, session):
-    while channel_queue:
+async def channel_worker(worker_no, channel_queue, entry_queue, session):
+    logger.info('Channel worker #%d started' % worker_no )
+
+    while True:
         channel = channel_queue.popleft()
 
         if channel is None:
-            await entry_queue.put(None)
-            continue
+            break
 
         fut = FutureLite()
         await download_to_future(channel.url, fut, session=session)
@@ -82,15 +87,28 @@ async def channel_worker(channel_queue, entry_queue, session):
         for entry in new_entries:
             await entry_queue.put(entry)
 
+    if not channel_queue:   # this is the last channel worker left
+        logger.info('Channel worker #%d signaling entry workers to shut down' % worker_no)
 
-async def entry_worker(entry_queue, session, buffer, entry_extractor):
+        for _ in range(ENTRY_POOL_SIZE):
+            await entry_queue.put(None)
+
+    logger.info('Terminating channel worker #%d' % worker_no)
+
+
+async def entry_worker(worker_no, entry_queue, session, buffer, entry_extractor):
+    logger.info('Entry worker #%d started' % worker_no)
+
     while True:
         entry = await entry_queue.get()
 
         if entry is None:
             break
 
-        fut = FutureLite()
-        await download_to_future(entry.url, fut, session=session)
-        process_entry(entry, fut, entry_extractor)
+        lfut = FutureLite()
+        await download_to_future(entry.url, lfut, session=session)
+        process_entry(entry, lfut, entry_extractor)
+
         buffer.add(entry)
+
+    logger.info('Entry worker #%d got None, terminating' % worker_no)

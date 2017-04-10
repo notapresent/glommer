@@ -34,7 +34,7 @@ def process_channel(channel, fut):
         tracker = URLTracker(channel)
         new_entries = tracker.track(entries)
         channel.status = Channel.ST_OK
-        logger.debug('%r - %d new entries' % (channel, len(new_entries)))
+        logger.info('%r - %d new entries' % (channel, len(new_entries)))
 
     channel.save()
     return new_entries
@@ -47,7 +47,11 @@ def process_entry(entry, fut, entry_extractor):
         entry.final_url = actual_url if actual_url != entry.url else ''
         entry.items = parse_entry(entry, html, entry_extractor) or None
 
-    except (DownloadError, ParseError) as e:
+    except DownloadError as e:
+        entry.status = Entry.ST_ERROR
+        logger.debug('%r - %r' % (entry, e))
+
+    except ParseError as e:
         entry.status = Entry.ST_ERROR
         logger.warning('%r - %r' % (entry, e))
 
@@ -58,7 +62,7 @@ def process_entry(entry, fut, entry_extractor):
             logger.debug('%r - %d items' % (entry, num_items))
         else:
             entry.status = Entry.ST_WARNING
-            logger.info('%r - No items' % (entry, ))
+            logger.debug('%r - No items' % (entry, ))
 
     return entry
 
