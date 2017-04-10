@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 class AioScraper:
     """Holds scrape state, like queues, client sessions etc"""
 
-    def __init__(self, loop=None, session=None, insert_buffer=None, entry_queue=None, entry_extractor=None):
+    def __init__(self, loop, insert_buffer, entry_queue, entry_extractor):
         self._loop = loop
         self._insert_buffer = insert_buffer
         self._entry_queue = entry_queue

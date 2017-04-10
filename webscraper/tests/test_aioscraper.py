@@ -1,17 +1,28 @@
 import asyncio
+from collections import deque
+from unittest.mock import Mock, MagicMock
 
 from django.test import TestCase
-from .util import AsyncioTestCase
-from unittest.mock import Mock, MagicMock
+from .util import AsyncioTestCase, create_channel
 
 from webscraper.aioscraper import AioScraper, channel_worker, entry_worker
 
 
-
-class AioHttpScraperTestCase(TestCase):
+class AioScraperTestCase(AsyncioTestCase, TestCase):
     def setUp(self):
-        self.loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(self.loop)
+        super(AioScraperTestCase, self).setUp()
+        self.entry_queue = asyncio.LifoQueue()
+        self.channel_queue = deque()
+        # self.loop.run_until_complete(self.init_queue())
+        self.buf = Mock()
+        # self.sess = SessionStub()
+        self.extr = Mock()
+        self.extr.extract.return_value = {}
+
+    def test_run_flushes_buffer(self):
+        s = AioScraper(loop=self.loop, insert_buffer=self.buf, entry_queue=self.entry_queue, entry_extractor=self.extr)
+        s.run([])
+        self.assertEquals(self.buf.flush.call_count, 1)
 
 
 class EntryWorkerTestCase(AsyncioTestCase):
