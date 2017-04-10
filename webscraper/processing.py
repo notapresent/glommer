@@ -1,6 +1,7 @@
 import logging
 from urllib.parse import urljoin
 
+from django.core.exceptions import ValidationError
 from webscraper.extractors import ParseError
 from .aiohttpdownloader import DownloadError
 from .extractors import DatasetExtractor, ext_selector_fragment, EntryExtractor
@@ -51,14 +52,11 @@ def process_entry(entry, fut, entry_extractor):
         actual_url = str(resp.url)
         entry.final_url = actual_url if actual_url != entry.url else ''
         entry.items = parse_entry(entry, html, entry_extractor) or None
+        ensure_entry_title(entry, html, entry_extractor)
 
-    except DownloadError as e:
+    except (DownloadError, ParseError) as e:
         entry.status = Entry.ST_ERROR
         logger.info('%r - %r' % (entry, e))
-
-    except ParseError as e:
-        entry.status = Entry.ST_ERROR
-        logger.exception('%r - %r' % (entry, e))
 
     else:
         if entry.items:
@@ -117,10 +115,21 @@ def parse_channel(channel, base_url, html):
     rows = extractor.extract(html)
 
     for row in rows:
-        row = normalize_channel_row(row)
         row['url'] = urljoin(base_url, row['url'])
-        entry = Entry(channel=channel, **row)
-        yield entry
+
+        try:
+            entry = make_entry(row)
+            entry.channel = channel
+            yield entry
+
+        except ValidationError as e:
+            logger.info("Invalid row %r in channel %r" % (row, channel))
+
+def make_entry(row):
+    row = normalize_channel_row(row)
+    entry = Entry(**row)
+    entry.clean_fields(exclude=['channel', 'title'])    # we can set title from entry page if its empty
+    return entry
 
 
 def parse_entry(entry, html, entry_extractor):
@@ -140,9 +149,20 @@ def parse_entry(entry, html, entry_extractor):
 
 def normalize_channel_row(row):
     for k, v in row.items():
-        row[k] = v.strip()
+        row[k] = v.strip() if v else ''
     return row
 
 
 def normalize_item_set(items):
     return set(map(str.strip, items))
+
+def ensure_entry_title(entry, html, entry_extractor):
+    if entry.title:
+        return
+
+    page_title = entry_extractor.extract_field('//title/text()', html)
+
+    if not page_title:
+        raise ParseError('Unable to extract title')
+
+    entry.title = page_title.strip()

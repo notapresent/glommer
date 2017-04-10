@@ -4,10 +4,12 @@ from unittest import mock
 from webscraper.models import Channel, Entry
 from webscraper.processing import (STATIC_EXTRACTOR_SETTINGS, make_static_extractor, make_channel_extractor,
                                    process_channel, process_entry, parse_channel, parse_entry, normalize_item_set,
-                                   normalize_channel_row, make_entry_extractor)
+                                   normalize_channel_row, make_entry_extractor, make_entry)
 from webscraper.futurelite import FutureLite
 from webscraper.aiohttpdownloader import DownloadError
 from webscraper.extractors import ParseError
+from django.db.models import Model
+from django.core.exceptions import ValidationError
 
 from django.test import TestCase
 from .util import create_channel, CHANNEL_DEFAULTS, ENTRY_DEFAULTS
@@ -114,8 +116,22 @@ class ChannelProcessingTestCase(TestCase):
 
         self.assertEqual(len(rv), len(entries))
 
+    def test_make_entry_returns_entry(self):
+        row = {'url':'http://host.com', 'title': 'test'}
+        rv = make_entry(row)
+        self.assertEquals(rv.url, 'http://host.com')
+        self.assertEquals(rv.title, 'test')
+        self.assertIs(rv.__class__, Entry)
+        self.assertIsInstance(rv, Model)
+
+    def test_make_entry_raises_on_invalid_row(self):
+        row = {'url': 'invalid url', 'title': ''}
+        with self.assertRaises(ValidationError):
+            make_entry(row)
+
 
 class EntryProcessingTestCase(unittest.TestCase):
+
 
     def setUp(self):
         self.channel = Channel(**CHANNEL_DEFAULTS)
@@ -158,9 +174,7 @@ class EntryProcessingTestCase(unittest.TestCase):
 
 
 class ParsingTestCase(unittest.TestCase):
-
     def test_parse_entry_result(self):
-
         ee = FakeEntryExtractor()
         entry = Entry(title='title', url='http://ho.st/', channel_id=1)
         rv = parse_entry(entry, '', ee)
@@ -173,19 +187,21 @@ class ParsingTestCase(unittest.TestCase):
             self.assertTrue(url.startswith(entry.real_url))
 
     @mock.patch('webscraper.processing.DatasetExtractor')
-    def test_parse_channel_result(self, dse):
-        channel = Channel(**CHANNEL_DEFAULTS)
+    def test_parse_channel_result(self, dse):   # TODO split this
         base_url = 'http://ho.st/'
-        mock_extractor = unittest.mock.MagicMock()
+        mock_extractor = unittest.mock.Mock()
         mock_extractor.extract.return_value = [
             {'url': '1.html', 'title': 'title 1', 'extra': 'extra 1'},
             {'url': base_url + '2.html', 'title': 'title 2', 'extra': 'extra 2'}
         ]
         dse.return_value = mock_extractor
+        channel = Channel(**CHANNEL_DEFAULTS)
         rv = list(parse_channel(channel, base_url, ''))
         self.assertEqual(len(rv), 2)
         self.assertIsInstance(rv[0], Entry)
         self.assertIsInstance(rv[1], Entry)
+        self.assertIs(rv[0].channel, channel)
+
 
     def test_normalize_channel_row(self):
         row = {'url': ' http://host.com/ ', 'title': ' title ', 'extra': ' extra'}
@@ -197,3 +213,4 @@ class ParsingTestCase(unittest.TestCase):
         self.assertEqual(len(rv), 2)
         self.assertIn('1', rv)
         self.assertIn('2', rv)
+
