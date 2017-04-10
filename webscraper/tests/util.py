@@ -1,3 +1,5 @@
+import asyncio
+import unittest
 from webscraper.models import Channel, Entry
 
 
@@ -32,3 +34,15 @@ def create_entry(**override_fields):
     fields.update(override_fields)
     fields.setdefault('channel', create_channel())
     return Entry.objects.create(**fields)
+
+
+
+class AsyncioTestCase(unittest.TestCase):
+    def setUp(self):
+        super(AsyncioTestCase, self).setUp()
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+
+    def tearDown(self):
+        self.loop.close()
+        super(AsyncioTestCase, self).tearDown()

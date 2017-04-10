@@ -1,23 +1,13 @@
 from functools import wraps
-import asyncio
 import os
 import unittest
 
 from vcr_unittest import VCRMixin
+from .util import AsyncioTestCase
 
 from webscraper.aiohttpdownloader import fetch, DownloadError, make_session, download_to_future
 from webscraper.futurelite import FutureLite
 
-
-class AsyncioTestCase(unittest.TestCase):
-    def setUp(self):
-        super(AsyncioTestCase, self).setUp()
-        self.loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(self.loop)
-
-    def tearDown(self):
-        self.loop.close()
-        super(AsyncioTestCase, self).tearDown()
 
 
 class AioHttpDownloaderTestCase(VCRMixin, AsyncioTestCase):
