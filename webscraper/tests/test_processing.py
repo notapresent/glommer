@@ -7,6 +7,7 @@ from webscraper.processing import (STATIC_EXTRACTOR_SETTINGS, make_static_extrac
                                    normalize_channel_row, make_entry_extractor)
 from webscraper.futurelite import FutureLite
 from webscraper.aiohttpdownloader import DownloadError
+from webscraper.extractors import ParseError
 
 from django.test import TestCase
 from .util import create_channel, CHANNEL_DEFAULTS, ENTRY_DEFAULTS
@@ -87,11 +88,17 @@ class ChannelProcessingTestCase(TestCase):
         process_channel(self.channel, self.future)
         self.assertEqual(self.channel.status, Channel.ST_OK)
 
-    def test_sets_status_error(self):
+    def test_sets_status_error_on_parse_error(self):
+        badfuture = FutureLite()
+        badfuture.set_exception(ParseError('test'))
+        process_channel(self.channel, badfuture)
+        self.assertEqual(self.channel.status, Channel.ST_ERROR)
+
+    def test_sets_status_warning_on_download_error(self):
         badfuture = FutureLite()
         badfuture.set_exception(DownloadError('test'))
         process_channel(self.channel, badfuture)
-        self.assertEqual(self.channel.status, Channel.ST_ERROR)
+        self.assertEqual(self.channel.status, Channel.ST_WARNING)
 
     def test_saves(self):
         process_channel(self.channel, self.future)
@@ -126,9 +133,15 @@ class EntryProcessingTestCase(unittest.TestCase):
         process_entry(self.entry, self.future, self.extractor)
         self.assertEqual(self.entry.status, Entry.ST_WARNING)
 
-    def test_sets_status_error(self):
+    def test_sets_status_error_on_download_error(self):
         future = FutureLite()
         future.set_exception(DownloadError('test'))
+        process_entry(self.entry, future, self.extractor)
+        self.assertEqual(self.entry.status, Entry.ST_ERROR)
+
+    def test_sets_status_error_on_parse_error(self):
+        future = FutureLite()
+        future.set_exception(ParseError('test'))
         process_entry(self.entry, future, self.extractor)
         self.assertEqual(self.entry.status, Entry.ST_ERROR)
 
