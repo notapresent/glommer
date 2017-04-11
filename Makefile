@@ -1,6 +1,9 @@
 IP ?= 127.0.0.1
 PORT ?= 8080
 
+test:
+	python manage.py test --keepdb --settings glommer.test_settings
+
 createuser:
 	psql -c "CREATE USER glommer WITH PASSWORD 'glommer';" postgres glommer
 
@@ -21,9 +24,6 @@ pgweb:
 
 scrape:
 	python -u manage.py scrape
-
-test:
-	python manage.py test --keepdb --settings glommer.test_settings
 
 autotest:
 	find . -name '*.py' -not -path '*/\.*' | entr -d -c  python manage.py test --keepdb --settings glommer.test_settings
