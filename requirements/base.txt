@@ -12,6 +12,7 @@ chardet==2.3.0            # via aiohttp
 cssselect==1.0.1
 dj-database-url==0.4.2
 django==1.11
+gunicorn==19.7.1
 lxml==3.7.3
 multidict==2.1.4          # via aiohttp, yarl
 psycopg2==2.7.1
