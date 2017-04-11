@@ -6,7 +6,6 @@ from webscraper.extractors import ParseError
 from .aiohttpdownloader import DownloadError
 from .extractors import DatasetExtractor, ext_selector_fragment, EntryExtractor
 from .models import Channel, Entry
-from .services import URLTracker
 
 IMAGE_EXTENSIONS = ['jpeg', 'jpg', 'jpe', 'webp', 'png']
 VIDEO_EXTENSIONS = ['avi', 'qt', 'mov', 'wmv', 'mpg', 'mpeg', 'mp4', 'webm']
@@ -37,8 +36,7 @@ def process_channel(channel, fut):
         logger.exception('%r - %r' % (channel, e))
 
     else:
-        tracker = URLTracker(channel)
-        new_entries = tracker.track(entries)
+        new_entries = Entry.objects.track_entries(channel, entries)
         channel.status = Channel.ST_OK
         logger.info('%r - %d new entries' % (channel, len(new_entries)))
 
