@@ -11,7 +11,7 @@ CHANNEL_DEFAULTS = {
     'row_selector': '//a[@href]',
     'url_selector': '@href',
     'title_selector': 'text()',
-    'extra_selector': '@title'
+    'extra_selector': ''
 }
 
 ENTRY_DEFAULTS = {

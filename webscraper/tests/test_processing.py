@@ -44,6 +44,7 @@ class ExtractorsTestCase(unittest.TestCase):
 
     def test_make_channel_extractor(self):
         channel = Channel(**CHANNEL_DEFAULTS)
+        channel.extra_selector = '@title'
         extractor = make_channel_extractor(channel)
         rv = extractor.extract('<a href="1.html" title="extra">Title</a><a>text</a>')
         self.assertEqual(len(rv), 1)
