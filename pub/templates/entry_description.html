@@ -1,0 +1,11 @@
+{% for set_name, urls in itemsets.items %}
+<p class="{{ set_name }}">
+    {% for url in urls %}
+        {% if set_name == 'images' %}
+        <a href="{{ url }}"><img src="{{ url }}"></a>
+        {% else %}
+        <video><source src="{{ url }}"></video>
+        {% endif %}
+    {% endfor %}
+</p>
+{% endfor %}

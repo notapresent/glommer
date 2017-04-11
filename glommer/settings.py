@@ -34,6 +34,7 @@ if 'ALLOWED_HOSTS' in os.environ:
 
 INSTALLED_APPS = [
     'webscraper.apps.WebscraperConfig',
+    'pub.apps.PubConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

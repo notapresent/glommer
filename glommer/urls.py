@@ -19,6 +19,7 @@ from django.http import HttpResponseRedirect
 
 urlpatterns = [
     url(r'^webscraper/', include('webscraper.urls')),
+    url(r'^public/', include('pub.urls')),
     url(r'^$', lambda r: HttpResponseRedirect('webscraper/')),  # Redirect to webscraper app
     url(r'^admin/', admin.site.urls),
 ]
