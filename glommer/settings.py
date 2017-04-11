@@ -183,7 +183,8 @@ if 'SENTRY_DSN' in os.environ:
         'dsn': os.environ.get('SENTRY_DSN')
     }
 
-    try:
-        RAVEN_CONFIG ['release'] = raven.fetch_git_sha(BASE_DIR)
-    except raven.exceptions.InvalidGitRepository:
-        pass
+    release_ver = os.environ.get('HEROKU_RELEASE_VERSION')
+    slug_commit = os.environ.get('HEROKU_SLUG_COMMIT')
+
+    if release_ver and slug_commit:
+        RAVEN_CONFIG['release'] = '%s (%s)' % (release_ver, slug_commit)
