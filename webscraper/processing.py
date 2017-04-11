@@ -156,6 +156,7 @@ def normalize_channel_row(row):
 def normalize_item_set(items):
     return set(map(str.strip, items))
 
+
 def ensure_entry_title(entry, html, entry_extractor):
     if entry.title:
         return

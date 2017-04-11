@@ -4,7 +4,7 @@ from unittest import mock
 from webscraper.models import Channel, Entry
 from webscraper.processing import (STATIC_EXTRACTOR_SETTINGS, make_static_extractor, make_channel_extractor,
                                    process_channel, process_entry, parse_channel, parse_entry, normalize_item_set,
-                                   normalize_channel_row, make_entry_extractor, make_entry)
+                                   normalize_channel_row, make_entry_extractor, make_entry, ensure_entry_title)
 from webscraper.futurelite import FutureLite
 from webscraper.aiohttpdownloader import DownloadError
 from webscraper.extractors import ParseError
@@ -77,6 +77,9 @@ class FakeEntryExtractor:
     def extract(self, _):
         return self._extract_rv
 
+    def extract_field(self, field_selector, html):
+        return self._extract_rv
+
 
 class ChannelProcessingTestCase(TestCase):
 
@@ -115,6 +118,12 @@ class ChannelProcessingTestCase(TestCase):
             rv = process_channel(self.channel, self.future)
 
         self.assertEqual(len(rv), len(entries))
+
+    def test_parse_channel_skips_invalid_entries(self):
+        channel = Channel(**CHANNEL_DEFAULTS)
+        doc = '<html><a href="invaid url" title="test title">Test</a></html>'
+        rv = parse_channel(channel, 'http://host.com/', doc)
+        self.assertEquals(len(list(rv)), 0)
 
     def test_make_entry_returns_entry(self):
         row = {'url':'http://host.com', 'title': 'test'}
@@ -172,6 +181,24 @@ class EntryProcessingTestCase(unittest.TestCase):
         process_entry(entry, self.future, self.extractor)
         self.assertEqual(entry.final_url, resp.url)
 
+    def test_ensure_entry_title_returns_title_if_set(self):
+        e = Entry(**ENTRY_DEFAULTS)
+        original_title = e.title
+        ensure_entry_title(e, '<html></html', FakeEntryExtractor())
+        self.assertEquals(e.title, original_title)
+
+    def test_ensure_entry_title_extracts_title_if_not_set(self):
+        e = Entry(**ENTRY_DEFAULTS)
+        e.title = ''
+        ensure_entry_title(e, '<html></html', FakeEntryExtractor('new title'))
+        self.assertEquals(e.title, 'new title')
+
+    def test_ensure_entry_title_raises(self):
+        e = Entry(**ENTRY_DEFAULTS)
+        e.title = ''
+        with self.assertRaises(ParseError):
+            ensure_entry_title(e, '<html></html', FakeEntryExtractor(''))
+
 
 class ParsingTestCase(unittest.TestCase):
     def test_parse_entry_result(self):
@@ -213,4 +240,3 @@ class ParsingTestCase(unittest.TestCase):
         self.assertEqual(len(rv), 2)
         self.assertIn('1', rv)
         self.assertIn('2', rv)
-
