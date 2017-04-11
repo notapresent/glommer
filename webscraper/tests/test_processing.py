@@ -126,7 +126,7 @@ class ChannelProcessingTestCase(TestCase):
         self.assertEquals(len(list(rv)), 0)
 
     def test_make_entry_returns_entry(self):
-        row = {'url':'http://host.com', 'title': 'test'}
+        row = {'url': 'http://host.com', 'title': 'test'}
         rv = make_entry(row)
         self.assertEquals(rv.url, 'http://host.com')
         self.assertEquals(rv.title, 'test')
@@ -140,7 +140,6 @@ class ChannelProcessingTestCase(TestCase):
 
 
 class EntryProcessingTestCase(unittest.TestCase):
-
 
     def setUp(self):
         self.channel = Channel(**CHANNEL_DEFAULTS)
@@ -201,6 +200,7 @@ class EntryProcessingTestCase(unittest.TestCase):
 
 
 class ParsingTestCase(unittest.TestCase):
+
     def test_parse_entry_result(self):
         ee = FakeEntryExtractor()
         entry = Entry(title='title', url='http://ho.st/', channel_id=1)
@@ -228,7 +228,6 @@ class ParsingTestCase(unittest.TestCase):
         self.assertIsInstance(rv[0], Entry)
         self.assertIsInstance(rv[1], Entry)
         self.assertIs(rv[0].channel, channel)
-
 
     def test_normalize_channel_row(self):
         row = {'url': ' http://host.com/ ', 'title': ' title ', 'extra': ' extra'}

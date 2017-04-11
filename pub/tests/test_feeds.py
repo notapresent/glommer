@@ -6,6 +6,7 @@ from django.http.response import Http404
 
 
 class ChannelFeedTestCase(TestCase):
+
     def setUp(self):
         super(ChannelFeedTestCase, self).setUp()
         self.rf = RequestFactory()

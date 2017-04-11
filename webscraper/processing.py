@@ -123,6 +123,7 @@ def parse_channel(channel, base_url, html):
         except ValidationError as e:
             logger.info("Invalid row %r in channel %r" % (row, channel))
 
+
 def make_entry(row):
     row = normalize_channel_row(row)
     entry = Entry(**row)

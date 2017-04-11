@@ -36,8 +36,8 @@ def create_entry(**override_fields):
     return Entry.objects.create(**fields)
 
 
-
 class AsyncioTestCase(unittest.TestCase):
+
     def setUp(self):
         super(AsyncioTestCase, self).setUp()
         self.loop = asyncio.new_event_loop()

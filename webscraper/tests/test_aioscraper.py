@@ -9,6 +9,7 @@ from webscraper.aioscraper import AioScraper, channel_worker, entry_worker
 
 
 class AioScraperTestCase(AsyncioTestCase, TestCase):
+
     def setUp(self):
         super(AioScraperTestCase, self).setUp()
         self.entry_queue = asyncio.LifoQueue()
@@ -26,6 +27,7 @@ class AioScraperTestCase(AsyncioTestCase, TestCase):
 
 
 class EntryWorkerTestCase(AsyncioTestCase):
+
     def setUp(self):
         super(EntryWorkerTestCase, self).setUp()
         self.queue = asyncio.LifoQueue()
@@ -67,6 +69,7 @@ class EntryWorkerTestCase(AsyncioTestCase):
 
 
 class SessionStub:
+
     def __init__(self):
         self.calls = []
         self.text = '<html></html>'

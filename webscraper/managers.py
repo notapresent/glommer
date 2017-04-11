@@ -14,6 +14,7 @@ class EntryManager(models.Manager):
     """Table level operations for Entry model"""
 
     def track_entries(self, channel, new_entries):
+        """Deletes from DB entries that are not in in new_entries, returns entries that are not in DB"""
         new_url2entry = {entry.url: entry for entry in new_entries}
         existing_url2id = {r['url']: r['id'] for r in self.get_id_url_for_channel(channel)}
         new_urls = new_url2entry.keys() - existing_url2id.keys()

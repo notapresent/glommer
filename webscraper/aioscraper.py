@@ -68,7 +68,7 @@ def scrape(channels):
 
 
 async def channel_worker(worker_no, channel_queue, entry_queue, session):
-    logger.info('Channel worker #%d started' % worker_no )
+    logger.info('Channel worker #%d started' % worker_no)
 
     while True:
         channel = channel_queue.popleft()

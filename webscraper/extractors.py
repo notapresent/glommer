@@ -6,7 +6,6 @@ import lxml.html
 from lxml.etree import XMLSyntaxError, XPathEvalError, ParserError
 
 
-
 RE_NS = "http://exslt.org/regular-expressions"  # this is the namespace for the EXSLT extensions
 
 

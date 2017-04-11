@@ -9,8 +9,8 @@ from webscraper.aiohttpdownloader import fetch, DownloadError, make_session, dow
 from webscraper.futurelite import FutureLite
 
 
-
 class AioHttpDownloaderTestCase(VCRMixin, AsyncioTestCase):
+
     def test_fetch_downloads(self):
         coro = with_session(fetch, loop=self.loop)
         resp, body = self.loop.run_until_complete(coro('http://httpbin.org/'))
@@ -50,6 +50,7 @@ class AioHttpDownloaderTestCase(VCRMixin, AsyncioTestCase):
 
 
 class TimeoutTestCase(AsyncioTestCase):
+
     @unittest.skipIf('CONTINUOUS_INTEGRATION' not in os.environ, 'Slow, CI only')
     def test_make_session_sets_read_timeout(self):
         coro = with_session(fetch, loop=self.loop, timeout=1)

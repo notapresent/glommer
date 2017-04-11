@@ -8,6 +8,7 @@ from webscraper.models import Channel, Entry
 
 
 class ChannelFeed(Feed):
+
     def get_object(self, request, channel_slug):
         return get_object_or_404(Channel, slug=channel_slug)
 
@@ -32,4 +33,3 @@ class ChannelFeed(Feed):
     def item_description(self, entry):
         ctx = {'entry': entry, 'itemsets': entry.items}
         return render_to_string('entry_description.html', ctx)
-
