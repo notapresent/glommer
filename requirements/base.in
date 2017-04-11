@@ -6,3 +6,4 @@ cssselect
 aiohttp
 cchardet
 aiodns
+whitenoise
