@@ -3,7 +3,7 @@ import unittest
 import lxml.html
 
 from webscraper.extractors import (FieldExtractor, RowExtractor, DatasetExtractor, ensure_element, first_or_none,
-                                   EntryExtractor, xpath_tolower, ext_selector_fragment, ParseError)
+                                   EntryExtractor, xpath_tolower, ext_selector_fragment, ParseError, RegexExtractor)
 
 
 class FieldExtractorTestCase(unittest.TestCase):
@@ -133,3 +133,10 @@ class EntryExtractorTestCase(unittest.TestCase):
         ee = EntryExtractor()
         val = ee.extract_field('//title/text()', '<html><title>Test</title></html>')
         self.assertEqual(val, 'Test')
+
+
+class RegexExtractorTestCase(unittest.TestCase):
+    def test_extracts(self):
+        ex = RegexExtractor(['doc'])
+        doc = '''<html><script>var url='path/to/file.doc';</script></html>'''
+        self.assertEquals(['path/to/file.doc'], ex.extract(doc))

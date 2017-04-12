@@ -1,6 +1,7 @@
 """Low-level html parsing primitives"""
 
 from string import ascii_uppercase, ascii_lowercase
+import re
 
 import lxml.html
 from lxml.etree import XMLSyntaxError, XPathEvalError, ParserError
@@ -87,14 +88,8 @@ def ext_selector_fragment(what, extensions):
     """XPath selector fragment to match filenames"""
 
     what = xpath_tolower(what)
-    rx = extensions_regex(extensions)
-    return "re:test({}, '{}')".format(what, rx)
-
-
-def extensions_regex(extensions):
-    """Regex to math certain filetypes"""
-
-    return '\.({})$'.format('|'.join(extensions))
+    ext_rx = '\.({})'.format('|'.join(extensions))
+    return "re:test({}, '{}')".format(what, ext_rx)
 
 
 class EntryExtractor:
@@ -118,3 +113,13 @@ class EntryExtractor:
 
 class ParseError(Exception):
     """Something unexpected happened while parsing html"""
+
+
+class RegexExtractor:
+
+    def __init__(self, extensions):
+        ext_frag = '\.(?:%s)' % '|'.join(extensions)
+        self._ext_rx = re.compile('([\w\.\-\/]+%s)' % ext_frag, re.IGNORECASE)
+
+    def extract(self, doc):
+        return self._ext_rx.findall(doc)
