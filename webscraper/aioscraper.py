@@ -3,11 +3,10 @@ import asyncio
 import logging
 from collections import deque
 
-from .futurelite import FutureLite
 from .aiohttpdownloader import make_session, download_to_future
-from .processing import process_channel, process_entry, make_entry_extractor
+from .futurelite import FutureLite
 from .insbuffer import InsertBuffer
-
+from .processing import process_channel, process_entry, make_entry_extractor
 
 # Default values
 CHANNEL_POOL_SIZE = 2
@@ -38,7 +37,7 @@ class AioScraper:
             self._insert_buffer.flush()
 
     async def _run(self):
-        self._session = await make_session(self._loop)
+        self._session = make_session(self._loop)
         workers = self.make_channel_workers() + self.make_entry_workers()
 
         async with self._session:

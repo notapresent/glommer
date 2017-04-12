@@ -22,7 +22,7 @@ class DownloadError(Exception):     # TODO differentiate retryable and non-retry
 
 async def fetch(url, *, session):
     try:
-        async with await session.get(url, timeout=None) as resp:   # timeout=None to use session's timeout
+        async with session.get(url, timeout=None) as resp:  # timeout=None to use session's timeout
             resp.raise_for_status()
             body = await resp.text(errors='ignore')
 
@@ -41,8 +41,7 @@ async def fetch(url, *, session):
     return resp, body
 
 
-async def make_session(loop, headers=None, *args, **kw):
-
+def make_session(loop, headers=None, *args, **kw):
     """Create and configure aiohttp.ClientSession"""
 
     sess_headers = DEFAULT_HEADERS
@@ -52,7 +51,9 @@ async def make_session(loop, headers=None, *args, **kw):
     timeout = kw.pop('timeout', DEFAULT_TIMEOUT)
 
     resolver = aiohttp.resolver.AsyncResolver(loop=loop)
+
     conn = aiohttp.TCPConnector(verify_ssl=False, limit_per_host=2, loop=loop, resolver=resolver)
+
     session = aiohttp.ClientSession(loop=loop, connector=conn, headers=sess_headers,
                                     read_timeout=timeout, conn_timeout=timeout)
 

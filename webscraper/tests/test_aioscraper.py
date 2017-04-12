@@ -1,17 +1,18 @@
 import asyncio
 from collections import deque
-from unittest.mock import Mock, MagicMock
+from unittest.mock import Mock
 
 from django.test import TestCase
-from .util import AsyncioTestCase, create_channel
 
-from webscraper.aioscraper import AioScraper, channel_worker, entry_worker
+from webscraper.aioscraper import AioScraper, entry_worker
+from .util import AsyncioTestCase
 
 
 class AioScraperTestCase(AsyncioTestCase, TestCase):
 
     def setUp(self):
         super(AioScraperTestCase, self).setUp()
+
         self.entry_queue = asyncio.LifoQueue()
         self.channel_queue = deque()
         # self.loop.run_until_complete(self.init_queue())
@@ -30,6 +31,7 @@ class EntryWorkerTestCase(AsyncioTestCase):
 
     def setUp(self):
         super(EntryWorkerTestCase, self).setUp()
+
         self.queue = asyncio.LifoQueue()
         self.loop.run_until_complete(self.init_queue())
         self.buf = set()    # Having add() method is enough
@@ -52,6 +54,7 @@ class EntryWorkerTestCase(AsyncioTestCase):
             await entry_worker(0, self.queue, self.sess, self.buf, self.extr)
 
         entry = Mock()
+
         self.loop.run_until_complete(go(entry))
         self.assertEquals(self.buf, {entry})
 
@@ -65,26 +68,48 @@ class EntryWorkerTestCase(AsyncioTestCase):
         self.loop.run_until_complete(go(entry))
 
         self.assertEquals(len(self.sess.calls), 1)
-        self.extr.extract.assert_called_once_with(self.sess.text)
+        self.extr.extract.assert_called_once_with(self.sess._response._rv)
 
 
 class SessionStub:
 
-    def __init__(self):
+    def __init__(self, response=None):
         self.calls = []
-        self.text = '<html></html>'
-        self.response = MagicMock()
-        self.response.text = self.get_text
+        self._response = response or ResponseStub('http://host.com/', '<html></html>')
 
-    async def get(self, url, **kw):
+    def set_response(self, resp):
+        self._response = resp
+
+    def get(self, url, **kw):
         self.calls.append((url, kw))
-        return self
+        return self._response
 
     async def __aenter__(self):
-        return self.response
+        print('SessionStub aenter')
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        print('SessionStub aexit')
+        pass
+
+
+class ResponseStub:
+
+    def __init__(self, url, rv):
+        self.url = url
+        self._rv = rv
+
+    async def text(self, *args, **kw):
+        if issubclass(type(self._rv), Exception):
+            raise self._rv
+        else:
+            return self._rv
+
+    async def __aenter__(self):
+        return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         pass
 
-    async def get_text(self, **kw):
-        return self.text
+    def raise_for_status(self):
+        pass

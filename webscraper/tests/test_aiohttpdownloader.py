@@ -1,12 +1,12 @@
-from functools import wraps
 import os
 import unittest
+from functools import wraps
 
 from vcr_unittest import VCRMixin
-from .util import AsyncioTestCase
 
 from webscraper.aiohttpdownloader import fetch, DownloadError, make_session, download_to_future
 from webscraper.futurelite import FutureLite
+from .util import AsyncioTestCase
 
 
 class AioHttpDownloaderTestCase(VCRMixin, AsyncioTestCase):
@@ -69,8 +69,8 @@ def with_session(f, *, loop, **sess_kw):
     """Create session and call function with it passed as keyword argument"""
     @wraps(f)
     async def wrapper(*args, **kw):
-        session = await make_session(loop=loop, **sess_kw)
-        with session:
+        session = make_session(loop=loop, **sess_kw)
+        async with session:
             return await f(*args, **kw, session=session)
 
     return wrapper
