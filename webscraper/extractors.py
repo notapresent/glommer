@@ -96,14 +96,28 @@ class EntryExtractor:
     """Set of extractors to operate on a single document"""
 
     def __init__(self):
-        self.extractors = {}
+        self._lxml_extractors = {}
+        self._text_extractors = {}
 
-    def add_extractor(self, alias, extractor):
-        self.extractors[alias] = extractor
+    def add_extractor(self, alias, extractor, extractor_type='lxml'):
+        if extractor_type == 'lxml':
+            self._lxml_extractors[alias] = extractor
+        else:
+            self._text_extractors[alias] = extractor
 
-    def extract(self, doc_or_tree):
-        tree = ensure_element(doc_or_tree)
-        return {alias: e.extract(tree) for alias, e in self.extractors.items()}
+    def extract(self, doc):
+        rv = {}
+        etree = ensure_element(doc)
+
+        for alias, ex in self._lxml_extractors.items():
+            rv[alias] =  ex.extract(etree)
+
+        for alias, ex in self._text_extractors:
+            rv.setdefault(alias, [])
+            rv[alias].extend(doc)
+
+        return rv
+
 
     def extract_field(self, sel, doc):
         ex = FieldExtractor(selector=sel)
