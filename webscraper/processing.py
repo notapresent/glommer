@@ -62,6 +62,7 @@ def process_entry(entry, fut, entry_extractor):
 
     else:
         if entry.items:
+            entry.items = postprocess_items(entry.items)
             entry.status = Entry.ST_OK
             num_items = sum([len(urls) for urls in entry.items.values()])
             logger.info('%r - %d items' % (entry, num_items))
@@ -177,7 +178,7 @@ def highest_resolution(urls):
     groups, ungrouped = group_by_resolution(urls)
 
     for group in groups.values():
-        best = highest_res_from_group(group['versions'])
+        best = highest_res_from_group(group)
         ungrouped.append(best)
 
     return ungrouped
@@ -202,21 +203,27 @@ def group_by_resolution(urls):
         groupname = prefix + suffix
 
         if groupname in all_groups:
-            all_groups[groupname]['versions'][res] = url
+            all_groups[groupname][res] = url
         else:
-            all_groups[groupname] = {
-                'prefix': prefix,
-                'suffix': suffix,
-                'versions': {res: url}
-            }
+            all_groups[groupname] = {res: url}
 
     # if there is only 1 element in gooup then move it to ungrouped
     valid_groups = {}
     for group_name, group in all_groups.items():
-        if len(group['versions']) > 1:
+        if len(group) > 1:
             valid_groups[group_name] = group
         else:
-            url, = group['versions'].values()
+            url, = group.values()
             ungrouped.append(url)
 
     return valid_groups, ungrouped
+
+
+def postprocess_items(items):
+    seen = set()
+    rv = {}
+    for cat_name, urls in items.items():
+        rv[cat_name] = [url for url in urls if url not in seen]
+        seen = seen | set(rv[cat_name])
+
+    return rv

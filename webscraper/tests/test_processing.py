@@ -5,7 +5,7 @@ from webscraper.models import Channel, Entry
 from webscraper.processing import (STATIC_EXTRACTOR_SETTINGS, make_static_extractor, make_channel_extractor,
                                    process_channel, process_entry, parse_channel, parse_entry, normalize_item_set,
                                    normalize_channel_row, make_entry_extractor, make_entry, ensure_entry_title,
-                                   highest_resolution)
+                                   highest_resolution, postprocess_items)
 from webscraper.futurelite import FutureLite
 from webscraper.aiohttpdownloader import DownloadError
 from webscraper.extractors import ParseError
@@ -202,6 +202,15 @@ class EntryProcessingTestCase(unittest.TestCase):
         with self.assertRaises(ParseError):
             ensure_entry_title(e, '<html></html', FakeEntryExtractor(''))
 
+    def test_postprocess_items_deduplicates(self):
+        items = {
+            'key1': ['1', '2'],
+            'key2': ['2', '3'],
+        }
+        rv = postprocess_items(items)
+        resulting_items = [url for sublist in rv.values() for url in sublist]
+        self.assertEqual(len(resulting_items), len(set(resulting_items)))
+
 
 class ParsingTestCase(unittest.TestCase):
 
@@ -244,10 +253,21 @@ class ParsingTestCase(unittest.TestCase):
         self.assertIn('1', rv)
         self.assertIn('2', rv)
 
-    def test_highest_resolution_groups_by_same_url(self):
+
+class HighestResolutionTestCase(unittest.TestCase):
+
+    def test_groups_by_same_url(self):
         urls = [
             'http://host.com/path/79296_sd_480p.mp4',
             'http://host.com/path/79296_sd_360p.mp4'
         ]
         rv = highest_resolution(urls)
         self.assertEquals(rv, [urls[0]])
+
+    def test_leaves_varying_urls_as_is(self):
+        urls = [
+            'http://host.com/path/file1_sd_480p.mp4',
+            'http://host.com/path/file2_sd_360p.mp4'
+        ]
+        rv = highest_resolution(urls)
+        self.assertEquals(len(rv), 2)
