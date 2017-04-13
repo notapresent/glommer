@@ -1,21 +1,25 @@
 import logging
-from urllib.parse import urljoin
+import re
+from urllib.parse import urljoin, urlparse
 
 from django.core.exceptions import ValidationError
 from webscraper.extractors import ParseError
 from .aiohttpdownloader import DownloadError
-from .extractors import DatasetExtractor, ext_selector_fragment, EntryExtractor
+from .extractors import DatasetExtractor, ext_selector_fragment, EntryExtractor, RegexExtractor
 from .models import Channel, Entry
 
 IMAGE_EXTENSIONS = ['jpeg', 'jpg', 'jpe', 'webp', 'png']
 VIDEO_EXTENSIONS = ['avi', 'qt', 'mov', 'wmv', 'mpg', 'mpeg', 'mp4', 'webm']
+STREAMING_EXTENSIONS = ['mp4', 'webm', 'flv', 'mov']
 
 STATIC_EXTRACTOR_SETTINGS = {
     'images': ('//a[', '@href', IMAGE_EXTENSIONS, ']/img[@src]'),
     'videos': ('//a[', '@href', VIDEO_EXTENSIONS, ']/img[@src]')
 }
 
+COMMON_RESOLUTIONS = ['hd_720', 'sd_480', 'sd_360', 'sd_240']
 
+res_rx = re.compile('^(?P<prefix>.+)(?P<res>{})(?P<suffix>.+)$'.format('|'.join(COMMON_RESOLUTIONS)), re.IGNORECASE)
 logger = logging.getLogger(__name__)
 
 
@@ -58,6 +62,7 @@ def process_entry(entry, fut, entry_extractor):
 
     else:
         if entry.items:
+            entry.items = postprocess_items(entry.items)
             entry.status = Entry.ST_OK
             num_items = sum([len(urls) for urls in entry.items.values()])
             logger.info('%r - %d items' % (entry, num_items))
@@ -73,9 +78,10 @@ def make_entry_extractor():
     ee = EntryExtractor()
 
     for alias, args in STATIC_EXTRACTOR_SETTINGS.items():
-        ee.add_extractor(alias, make_static_extractor(*args))
+        ee.add_extractor(alias, make_static_extractor(*args), extractor_type='lxml')
 
-    # TODO: add streaming extractor here
+    streaming_extractor = RegexExtractor(STREAMING_EXTENSIONS)
+    ee.add_extractor('streaming', streaming_extractor, extractor_type='text')
 
     return ee
 
@@ -166,3 +172,58 @@ def ensure_entry_title(entry, html, entry_extractor):
         raise ParseError('Unable to extract title')
 
     entry.title = page_title.strip()
+
+
+def highest_resolution(urls):
+    groups, ungrouped = group_by_resolution(urls)
+
+    for group in groups.values():
+        best = highest_res_from_group(group)
+        ungrouped.append(best)
+
+    return ungrouped
+
+
+def highest_res_from_group(versions_dict):  # versions_dict == {resolution: url, ...}
+    top_key = sorted(versions_dict.keys(), key=COMMON_RESOLUTIONS.index)[0]
+    return versions_dict[top_key]
+
+
+def group_by_resolution(urls):
+    all_groups, ungrouped = {}, []
+
+    for url in urls:
+        matches = res_rx.fullmatch(url)
+
+        if matches is None:
+            ungrouped.append(url)
+            continue
+
+        prefix, res, suffix = matches.groups()
+        groupname = prefix + suffix
+
+        if groupname in all_groups:
+            all_groups[groupname][res] = url
+        else:
+            all_groups[groupname] = {res: url}
+
+    # if there is only 1 element in gooup then move it to ungrouped
+    valid_groups = {}
+    for group_name, group in all_groups.items():
+        if len(group) > 1:
+            valid_groups[group_name] = group
+        else:
+            url, = group.values()
+            ungrouped.append(url)
+
+    return valid_groups, ungrouped
+
+
+def postprocess_items(items):
+    seen = set()
+    rv = {}
+    for cat_name, urls in items.items():
+        rv[cat_name] = [url for url in urls if url not in seen]
+        seen = seen | set(rv[cat_name])
+
+    return rv
