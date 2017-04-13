@@ -33,3 +33,6 @@ coverage:
 	coverage report --skip-covered
 	coverage html --skip-covered
 	xdg-open htmlcov/index.html
+
+syncdeps:
+	pip-sync requirements/*.txt
