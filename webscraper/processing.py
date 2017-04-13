@@ -1,5 +1,6 @@
 import logging
-from urllib.parse import urljoin
+import re
+from urllib.parse import urljoin, urlparse
 
 from django.core.exceptions import ValidationError
 from webscraper.extractors import ParseError
@@ -16,7 +17,9 @@ STATIC_EXTRACTOR_SETTINGS = {
     'videos': ('//a[', '@href', VIDEO_EXTENSIONS, ']/img[@src]')
 }
 
+COMMON_RESOLUTIONS = ['hd_720', 'sd_480', 'sd_360', 'sd_240']
 
+res_rx = re.compile('^(?P<prefix>.+)(?P<res>{})(?P<suffix>.+)$'.format('|'.join(COMMON_RESOLUTIONS)), re.IGNORECASE)
 logger = logging.getLogger(__name__)
 
 
@@ -168,3 +171,52 @@ def ensure_entry_title(entry, html, entry_extractor):
         raise ParseError('Unable to extract title')
 
     entry.title = page_title.strip()
+
+
+def highest_resolution(urls):
+    groups, ungrouped = group_by_resolution(urls)
+
+    for group in groups.values():
+        best = highest_res_from_group(group['versions'])
+        ungrouped.append(best)
+
+    return ungrouped
+
+
+def highest_res_from_group(versions_dict):  # versions_dict == {resolution: url, ...}
+    top_key = sorted(versions_dict.keys(), key=COMMON_RESOLUTIONS.index)[0]
+    return versions_dict[top_key]
+
+
+def group_by_resolution(urls):
+    all_groups, ungrouped = {}, []
+
+    for url in urls:
+        matches = res_rx.fullmatch(url)
+
+        if matches is None:
+            ungrouped.append(url)
+            continue
+
+        prefix, res, suffix = matches.groups()
+        groupname = prefix + suffix
+
+        if groupname in all_groups:
+            all_groups[groupname]['versions'][res] = url
+        else:
+            all_groups[groupname] = {
+                'prefix': prefix,
+                'suffix': suffix,
+                'versions': {res: url}
+            }
+
+    # if there is only 1 element in gooup then move it to ungrouped
+    valid_groups = {}
+    for group_name, group in all_groups.items():
+        if len(group['versions']) > 1:
+            valid_groups[group_name] = group
+        else:
+            url, = group['versions'].values()
+            ungrouped.append(url)
+
+    return valid_groups, ungrouped

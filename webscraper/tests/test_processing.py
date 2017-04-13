@@ -4,7 +4,8 @@ from unittest import mock
 from webscraper.models import Channel, Entry
 from webscraper.processing import (STATIC_EXTRACTOR_SETTINGS, make_static_extractor, make_channel_extractor,
                                    process_channel, process_entry, parse_channel, parse_entry, normalize_item_set,
-                                   normalize_channel_row, make_entry_extractor, make_entry, ensure_entry_title)
+                                   normalize_channel_row, make_entry_extractor, make_entry, ensure_entry_title,
+                                   highest_resolution)
 from webscraper.futurelite import FutureLite
 from webscraper.aiohttpdownloader import DownloadError
 from webscraper.extractors import ParseError
@@ -242,3 +243,11 @@ class ParsingTestCase(unittest.TestCase):
         self.assertEqual(len(rv), 2)
         self.assertIn('1', rv)
         self.assertIn('2', rv)
+
+    def test_highest_resolution_groups_by_same_url(self):
+        urls = [
+            'http://host.com/path/79296_sd_480p.mp4',
+            'http://host.com/path/79296_sd_360p.mp4'
+        ]
+        rv = highest_resolution(urls)
+        self.assertEquals(rv, [urls[0]])
