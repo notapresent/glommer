@@ -58,7 +58,6 @@ def scrape(channels):
     eq = asyncio.Queue(ENTRY_POOL_SIZE * 2, loop=loop)
     ee = make_entry_extractor()
     scraper = AioScraper(loop=loop, insert_buffer=buf, entry_queue=eq, entry_extractor=ee)
-
     try:
         scraper.run(channels)
 
@@ -101,7 +100,7 @@ async def entry_worker(worker_no, entry_queue, session, buffer, entry_extractor)
             break
 
         lfut = FutureLite()
-        await download_to_future(entry.url, lfut, session=session)
+        await asyncio.shield(download_to_future(entry.url, lfut, session=session))
         process_entry(entry, lfut, entry_extractor)
 
         buffer.add(entry)
