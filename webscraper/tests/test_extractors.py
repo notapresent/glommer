@@ -136,7 +136,9 @@ class EntryExtractorTestCase(unittest.TestCase):
 
 
 class RegexExtractorTestCase(unittest.TestCase):
+
     def test_extracts(self):
         ex = RegexExtractor(['doc'])
         doc = '''<html><script>var url='path/to/file.doc';</script></html>'''
-        self.assertEquals(['path/to/file.doc'], ex.extract(doc))
+        expected = [{'url': 'path/to/file.doc'}]
+        self.assertEquals(expected, ex.extract(doc))

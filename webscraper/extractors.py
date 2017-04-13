@@ -110,14 +110,13 @@ class EntryExtractor:
         etree = ensure_element(doc)
 
         for alias, ex in self._lxml_extractors.items():
-            rv[alias] =  ex.extract(etree)
+            rv[alias] = ex.extract(etree)
 
-        for alias, ex in self._text_extractors:
+        for alias, ex in self._text_extractors.items():
             rv.setdefault(alias, [])
-            rv[alias].extend(doc)
+            rv[alias].extend(ex.extract(doc))
 
         return rv
-
 
     def extract_field(self, sel, doc):
         ex = FieldExtractor(selector=sel)
@@ -136,4 +135,5 @@ class RegexExtractor:
         self._ext_rx = re.compile('([\w\.\-\/]+%s)' % ext_frag, re.IGNORECASE)
 
     def extract(self, doc):
-        return self._ext_rx.findall(doc)
+        urls = self._ext_rx.findall(doc)
+        return [{'url': url} for url in urls]

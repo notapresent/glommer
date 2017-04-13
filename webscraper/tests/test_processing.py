@@ -56,7 +56,9 @@ class ExtractorsTestCase(unittest.TestCase):
     def test_make_entry_extractor_returns_extractor(self):
         ee = make_entry_extractor()
         rv = ee.extract(self.IMAGES_TEST_DOC)
-        self.assertEqual(len(rv), 2)
+        self.assertEqual(len(rv['images']), 2)
+        self.assertEqual(len(rv['videos']), 0)
+        self.assertEqual(len(rv['streaming']), 0)
 
 
 class FakeResponse:

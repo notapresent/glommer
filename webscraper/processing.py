@@ -4,11 +4,12 @@ from urllib.parse import urljoin
 from django.core.exceptions import ValidationError
 from webscraper.extractors import ParseError
 from .aiohttpdownloader import DownloadError
-from .extractors import DatasetExtractor, ext_selector_fragment, EntryExtractor
+from .extractors import DatasetExtractor, ext_selector_fragment, EntryExtractor, RegexExtractor
 from .models import Channel, Entry
 
 IMAGE_EXTENSIONS = ['jpeg', 'jpg', 'jpe', 'webp', 'png']
 VIDEO_EXTENSIONS = ['avi', 'qt', 'mov', 'wmv', 'mpg', 'mpeg', 'mp4', 'webm']
+STREAMING_EXTENSIONS = ['mp4', 'webm', 'flv', 'mov']
 
 STATIC_EXTRACTOR_SETTINGS = {
     'images': ('//a[', '@href', IMAGE_EXTENSIONS, ']/img[@src]'),
@@ -73,9 +74,10 @@ def make_entry_extractor():
     ee = EntryExtractor()
 
     for alias, args in STATIC_EXTRACTOR_SETTINGS.items():
-        ee.add_extractor(alias, make_static_extractor(*args))
+        ee.add_extractor(alias, make_static_extractor(*args), extractor_type='lxml')
 
-    # TODO: add streaming extractor here
+    streaming_extractor = RegexExtractor(STREAMING_EXTENSIONS)
+    ee.add_extractor('streaming', streaming_extractor, extractor_type='text')
 
     return ee
 
