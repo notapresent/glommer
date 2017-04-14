@@ -2,7 +2,7 @@ IP ?= 127.0.0.1
 PORT ?= 8080
 
 test:
-	python manage.py test --keepdb --settings glommer.test_settings
+	python manage.py test --keepdb --settings glommer.test_settings --failfast
 
 createuser:
 	psql -c "CREATE USER glommer WITH PASSWORD 'glommer';" postgres glommer
