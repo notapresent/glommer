@@ -18,7 +18,7 @@ class EntryManagerTestCase(TestCase):
 
     def setUp(self):
         self.channel = create_channel()
-        self.old_entry = create_entry(channel=self.channel)
+        self.old_entry = create_entry(channel=self.channel, url='http://ho.st/old')
 
     def test_track_returns_only_new_entries(self):
         new_entry = Entry(channel=self.channel, **ENTRY_DEFAULTS)

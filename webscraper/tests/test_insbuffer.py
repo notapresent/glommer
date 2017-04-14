@@ -22,8 +22,10 @@ class InsertBufferTestCase(TestCase):
         old_num_queries = len(connection.queries)
 
         with self.buf as buffer:
-            for _ in range(5):
-                buffer.add(Entry(channel=self.channel, **ENTRY_DEFAULTS))
+            for i in range(5):
+                entry = Entry(channel=self.channel, **ENTRY_DEFAULTS)
+                entry.url = 'http://ho.st/%d' % i
+                buffer.add(entry)
 
         num_queries = len(connection.queries) - old_num_queries
 

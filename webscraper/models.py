@@ -69,6 +69,9 @@ class Channel(Model):
 class Entry(Model):
     """Represents content entry"""
 
+    class Meta:
+        unique_together = ('channel', 'url')
+
     ST_NEW = 0
     ST_OK = 1
     ST_WARNING = 2

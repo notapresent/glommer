@@ -17,6 +17,12 @@ class ChannelTestCase(TestCase):
         self.assertNotEqual(channel.slug, '')
         self.assertIsNotNone(channel.slug)
 
+    def test_unique_slug_creation(self):
+        channel = create_channel()
+        other_channel = Channel(**CHANNEL_DEFAULTS)
+        other_channel.slug = channel.slug
+        other_channel.save()
+
 
 class EntryTestCase(TestCase):
 
@@ -31,3 +37,15 @@ class EntryTestCase(TestCase):
         e2 = create_entry(url='http://one.com', final_url='http://two.com')
         self.assertEqual(e1.real_url, 'http://one.com')
         self.assertEqual(e2.real_url, 'http://two.com')
+
+    def test_channel_url_constraint(self):
+        c = create_channel()
+        e1 = create_entry(channel=c, url='http://host.com/1')
+        e2 = Entry(channel=c, **ENTRY_DEFAULTS)
+        e2.url = 'http://host.com/1'
+
+        with self.assertRaises(Exception):
+            e2.save()
+
+
+

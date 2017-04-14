@@ -39,14 +39,13 @@ class ChannelFeedTestCase(TestCase):
         self.assertEqual(list(rv), [self.entry])
 
     def test_items_filters_by_status(self):
-        entry2 = create_entry(channel=self.chan, status=2)
-        entry3 = create_entry(channel=self.chan, status=3)
+        entry2 = create_entry(channel=self.chan, status=2, url='http://ho.st/1')
+        entry3 = create_entry(channel=self.chan, status=3, url='http://ho.st/2')
         rv = self.feed.items(self.chan)
         self.assertEqual(list(rv), [self.entry])
 
     def test_item_link_returns_url(self):
-        entry = create_entry(channel=self.chan)
-        self.assertEquals(self.feed.item_link(entry), entry.url)
+        self.assertEquals(self.feed.item_link(self.entry), self.entry.url)
 
     def test_item_title_returns_title(self):
         self.assertEquals(self.feed.item_title(self.entry), self.entry.title)
