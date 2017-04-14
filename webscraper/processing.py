@@ -13,8 +13,8 @@ VIDEO_EXTENSIONS = ['avi', 'qt', 'mov', 'wmv', 'mpg', 'mpeg', 'mp4', 'webm']
 STREAMING_EXTENSIONS = ['mp4', 'webm', 'flv', 'mov']
 
 STATIC_EXTRACTOR_SETTINGS = {
-    'images': ('//a[', '@href', IMAGE_EXTENSIONS, ']/img[@src]'),
-    'videos': ('//a[', '@href', VIDEO_EXTENSIONS, ']/img[@src]')
+    'images': ('//a[', '@href', IMAGE_EXTENSIONS, ']//img[@src]'),
+    'videos': ('//a[', '@href', VIDEO_EXTENSIONS, ']//img[@src]')
 }
 
 COMMON_RESOLUTIONS = ['hd_720', 'sd_480', 'sd_360', 'sd_240']
@@ -93,7 +93,7 @@ def make_static_extractor(prefix, what, extensions, suffix):
     selector = prefix + ext_fragment + suffix
     return DatasetExtractor(
         selector=selector,
-        fields={'url': {'selector': 'parent::a/@href'}}
+        fields={'url': {'selector': 'ancestor::a/@href'}}
     )
 
 
