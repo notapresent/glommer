@@ -61,6 +61,17 @@ class ExtractorsTestCase(unittest.TestCase):
         self.assertEqual(len(rv['videos']), 0)
         self.assertEqual(len(rv['streaming']), 0)
 
+    def test_extractor_extracts_nested(self):
+        doc = '''
+        <a href="1.jpg"><font style="">
+        <img src="1tn.jpg">
+        Some text
+        </font></a>
+        '''
+        ee = make_entry_extractor()
+        rv = ee.extract(doc)
+        self.assertEqual(rv['images'], [{'url': '1.jpg'}])
+
 
 class FakeResponse:
     """Aiohttp.response stub"""
