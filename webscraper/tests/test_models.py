@@ -22,6 +22,7 @@ class ChannelTestCase(TestCase):
         other_channel = Channel(**CHANNEL_DEFAULTS)
         other_channel.slug = channel.slug
         other_channel.save()
+        self.assertNotEqual(channel.slug, other_channel.slug)
 
 
 class EntryTestCase(TestCase):
