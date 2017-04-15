@@ -16,9 +16,7 @@ Required settings
 
 | Variable          | Description
 |-------------------|------------
-| `DATABASE_URL`    | Database connection string. For example, `postgres://user:password@host:post/database_name`
-| `SECRET_KEY`      | Key, used to provide cryptographic signing. Should be set to a unique, unpredictable value.
-
+| `SECRET_KEY`      | Key, used to provide cryptographic signing. Should be set to a unique, unpredictable value. Only required if `DEBUG` is `False`
 
 
 Optional settings
@@ -26,6 +24,7 @@ Optional settings
 
 | Variable          | Description
 |-------------------|------------
+| `DATABASE_URL`    | Database connection string. Default: `postgresql://glommer:glommer@localhost/glommer`
 | `DEBUG`           | Set this to non-empty string to enable debug mode. Turned off by default
 | `IP`              | IP address to bind to. Default: `127.0.0.1`
 | `PORT`            | port number to listen on. Default: `8080`
