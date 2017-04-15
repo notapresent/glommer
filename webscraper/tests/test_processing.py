@@ -19,31 +19,13 @@ class FakeResponse:
     url = 'http://host.com/'
 
 
-class FakeEntryExtractor:
-    """EntryExtractor stub"""
-
-    DEFAULT_EXTRACT_RV = {
-        'images': [],
-        'videos': ['1.avi', 'http://ho.st/2.avi']
-    }
-
-    def __init__(self, extract_rv=None):
-        self._extract_rv = extract_rv if extract_rv is not None else self.DEFAULT_EXTRACT_RV
-
-    def extract(self, _):
-        return self._extract_rv
-
-    def extract_field(self, field_selector, html):
-        return self._extract_rv
-
-
 class ChannelProcessingTestCase(TestCase):
 
     def setUp(self):
         self.channel = Channel(**CHANNEL_DEFAULTS)
         self.response = FakeResponse()
         self.future = FutureLite()
-        self.future.set_result((self.response, '<html></html>'))
+        self.future.set_result((self.response, '<html><p></p></html>'))
 
     def test_sets_status_ok(self):
         process_channel(self.channel, self.future)
@@ -88,39 +70,42 @@ class EntryProcessingTestCase(unittest.TestCase):
         self.channel = Channel(**CHANNEL_DEFAULTS)
         self.entry = Entry(channel=self.channel, **ENTRY_DEFAULTS)
         self.future = FutureLite()
-        self.future.set_result((FakeResponse(), ''))
-        self.extractor = FakeEntryExtractor()
+        self.doc = '''
+            <a href="1.jpeg"><img src="1tn.jpeg"></a>
+        '''
+        self.future.set_result((FakeResponse(), self.doc))
 
     def test_sets_status_ok(self):
-        process_entry(self.entry, self.future, self.extractor)
+        process_entry(self.entry, self.future)
         self.assertEqual(self.entry.status, Entry.ST_OK)
 
     def test_sets_status_warn(self):
-        self.extractor = FakeEntryExtractor({})
-        process_entry(self.entry, self.future, self.extractor)
+        fut = FutureLite()
+        fut.set_result((FakeResponse, '<html></html>'))
+        process_entry(self.entry, fut)
         self.assertEqual(self.entry.status, Entry.ST_WARNING)
 
     def test_sets_status_error_on_download_error(self):
         future = FutureLite()
         future.set_exception(DownloadError('test'))
-        process_entry(self.entry, future, self.extractor)
+        process_entry(self.entry, future)
         self.assertEqual(self.entry.status, Entry.ST_ERROR)
 
     def test_sets_status_error_on_parse_error(self):
         future = FutureLite()
         future.set_exception(ParseError('test'))
-        process_entry(self.entry, future, self.extractor)
+        process_entry(self.entry, future)
         self.assertEqual(self.entry.status, Entry.ST_ERROR)
 
     def test_sets_final_url(self):
         resp, _ = self.future.result()
         self.entry.url = resp.url
-        process_entry(self.entry, self.future, self.extractor)
+        process_entry(self.entry, self.future)
         self.assertEqual(self.entry.final_url, '')
 
         entry = Entry(channel=self.channel, **ENTRY_DEFAULTS)
         entry.url = 'http://some-other-url,com/'
-        process_entry(entry, self.future, self.extractor)
+        process_entry(entry, self.future)
         self.assertEqual(entry.final_url, resp.url)
 
     def test_postprocess_items_deduplicates(self):

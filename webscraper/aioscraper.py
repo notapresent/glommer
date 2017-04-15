@@ -6,7 +6,7 @@ from collections import deque
 from .aiohttpdownloader import make_session, download_to_future
 from .futurelite import FutureLite
 from .insbuffer import InsertBuffer
-from .processing import process_channel, process_entry, EntryExtractor
+from .processing import process_channel, process_entry
 
 # Default values
 CHANNEL_POOL_SIZE = 2
@@ -19,11 +19,10 @@ logger = logging.getLogger(__name__)
 class AioScraper:
     """Holds scrape state, like queues, client sessions etc"""
 
-    def __init__(self, loop, insert_buffer, entry_queue, entry_extractor):
+    def __init__(self, loop, insert_buffer, entry_queue):
         self._loop = loop
         self._insert_buffer = insert_buffer
         self._entry_queue = entry_queue
-        self._entry_extractor = entry_extractor
         self._channel_queue = None
 
     def run(self, channels):
@@ -48,7 +47,7 @@ class AioScraper:
         return [channel_worker(i, *args) for i in range(CHANNEL_POOL_SIZE)]
 
     def make_entry_workers(self):
-        args = (self._entry_queue, self._session, self._insert_buffer, self._entry_extractor)
+        args = (self._entry_queue, self._session, self._insert_buffer)
         return [entry_worker(i, *args) for i in range(ENTRY_POOL_SIZE)]
 
 
@@ -56,8 +55,7 @@ def scrape(channels):
     loop = asyncio.get_event_loop()
     buf = InsertBuffer(INSERT_BUFFER_SIZE)
     eq = asyncio.Queue(ENTRY_POOL_SIZE * 2, loop=loop)
-    ee = EntryExtractor()
-    scraper = AioScraper(loop=loop, insert_buffer=buf, entry_queue=eq, entry_extractor=ee)
+    scraper = AioScraper(loop=loop, insert_buffer=buf, entry_queue=eq)
     try:
         scraper.run(channels)
 
@@ -90,7 +88,7 @@ async def channel_worker(worker_no, channel_queue, entry_queue, session):
     logger.info('Terminating channel worker #%d' % worker_no)
 
 
-async def entry_worker(worker_no, entry_queue, session, buffer, entry_extractor):
+async def entry_worker(worker_no, entry_queue, session, buffer):
     logger.info('Entry worker #%d started' % worker_no)
 
     while True:
@@ -101,7 +99,7 @@ async def entry_worker(worker_no, entry_queue, session, buffer, entry_extractor)
 
         lfut = FutureLite()
         await asyncio.shield(download_to_future(entry.url, lfut, session=session))
-        process_entry(entry, lfut, entry_extractor)
+        process_entry(entry, lfut)
 
         buffer.add(entry)
 

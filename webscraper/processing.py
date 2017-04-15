@@ -40,11 +40,11 @@ def process_channel(channel, fut):
     return new_entries
 
 
-def process_entry(entry, fut, entry_extractor):
+def process_entry(entry, fut):
     try:
         resp, html = fut.result()
         entry.real_url = str(resp.url)
-        populate_entry(entry, html, entry_extractor) or None
+        populate_entry(entry, html) or None
 
     except (DownloadError, ParseError) as e:
         entry.status = Entry.ST_ERROR
@@ -82,8 +82,8 @@ def parse_channel(channel, base_url, html):
             logger.info("Invalid row %r in channel %r" % (row, channel))
 
 
-def populate_entry(entry, html, entry_extractor):
-    extracted = entry_extractor.extract(html)
+def populate_entry(entry, html):
+    extracted = EntryExtractor.extract_items(html)
 
     # TODO START
     entry.items = {}

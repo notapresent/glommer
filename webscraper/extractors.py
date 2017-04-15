@@ -78,12 +78,14 @@ class ChannelExtractor(DatasetExtractor):
 class EntryExtractor:
     """Aggregates multiple extractors to operate on a single entry"""
 
+    _instance = None
+
     def __init__(self):
         self._images_extractor = link_extractor(IMAGE_EXTENSIONS)
         self._videos_extractor = link_extractor(VIDEO_EXTENSIONS)
         self._streaming_extractor = RegexExtractor(STREAMING_EXTENSIONS)
 
-    def extract(self, doc, extract_title=False):
+    def extract(self, doc):
         etree = ensure_element(doc)
         image_urls = [row['url'] for row in self._images_extractor.extract(etree)]
         video_urls = [row['url'] for row in self._videos_extractor.extract(etree)]
@@ -94,6 +96,14 @@ class EntryExtractor:
             'videos': video_urls,
             'streaming': streaming_urls
         }
+
+    @classmethod
+    def extract_items(cls, doc):
+        try:
+            return cls._instance.extract(doc)
+        except AttributeError:
+            cls._instance = cls()
+            return cls._instance.extract(doc)
 
 
 class RegexExtractor:
@@ -128,7 +138,7 @@ def ensure_element(doc_or_tree):
     try:
         return lxml.html.fromstring(doc_or_tree)
 
-    except (ValueError, TypeError, ParserError) as e:
+    except (ValueError, TypeError, ParserError, XMLSyntaxError) as e:
         message = 'Invalid document {} - {!r}'.format(type(doc_or_tree), e)
         raise ParseError(message) from e
 

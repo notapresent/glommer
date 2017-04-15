@@ -117,6 +117,15 @@ class EntryExtractorTestCase(unittest.TestCase):
         ee.extract('<xml></xml>')
         self.assertEqual(me.extract.call_args_list[0], me.extract.call_args_list[1])
 
+    def test_extract_items_works(self):
+        doc = '<a href="movie.avi"><img src="movie_tn.jpg"></a>'
+        ee = EntryExtractor()
+        self.assertEqual(ee.extract(doc), EntryExtractor.extract_items(doc))
+
+    def test_extract_raises_on_invalid_doc(self):
+        ee = EntryExtractor()
+        with self.assertRaises(ParseError):
+            ee.extract('')
 
 class UtilTestCase(unittest.TestCase):
 
