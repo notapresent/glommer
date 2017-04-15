@@ -9,13 +9,21 @@ from lxml.etree import XMLSyntaxError, XPathEvalError, ParserError
 
 RE_NS = "http://exslt.org/regular-expressions"  # this is the namespace for the EXSLT extensions
 
+IMAGE_EXTENSIONS = ['jpeg', 'jpg', 'jpe', 'webp', 'png']
+VIDEO_EXTENSIONS = ['avi', 'qt', 'mov', 'wmv', 'mpg', 'mpeg', 'mp4', 'webm']
+STREAMING_EXTENSIONS = ['mp4', 'webm', 'flv', 'mov']
+
+
+class ParseError(Exception):
+    """Something unexpected happened while parsing html"""
+
 
 class RowExtractor:
 
     """Extracts sequence of document fragments from document or fragment"""
 
-    def __init__(self, **settings):
-        self.selector = settings.pop('selector')
+    def __init__(self, *, selector):
+        self.selector = selector
 
     def extract(self, doc_or_tree):
         try:
@@ -23,7 +31,7 @@ class RowExtractor:
             return etree.xpath(self.selector, namespaces={'re': RE_NS})
 
         except (XMLSyntaxError, XPathEvalError) as e:
-            raise ParseError() from e
+            raise ParseError(str(e)) from e
 
 
 class FieldExtractor(RowExtractor):
@@ -39,23 +47,81 @@ class DatasetExtractor:
 
     """Extracts sequence of dicts from document"""
 
-    def __init__(self, **settings):
-        self.row_extractor = RowExtractor(selector=settings.pop('selector'))
-        self.set_fields(settings.pop('fields'))
-
-    def set_fields(self, fields_settings):
-        self.fields = {name: FieldExtractor(**fs) for name, fs in fields_settings.items()}
+    def __init__(self, *, selector, fields):
+        self.row_extractor = RowExtractor(selector=selector)
+        self.field_extractors = {name: FieldExtractor(selector=fs) for name, fs in fields.items()}
 
     def extract(self, doc_or_tree):
         rows = self.row_extractor.extract(doc_or_tree)
         return [self.extract_fields(row) for row in rows]
 
     def extract_fields(self, row):
-        rv = {name: self.fields[name].extract(row) for name in self.fields.keys()}
-        return rv
+        return {name: ex.extract(row) for name, ex in self.field_extractors.items()}
+
+
+class ChannelExtractor(DatasetExtractor):
+
+    """ Extracts rows from html document"""
+
+    def __init__(self, *, row_selector, url_selector, title_selector, extra_selector=None):
+        fields = {
+            'url': url_selector,
+            'title': title_selector,
+        }
+
+        if extra_selector is not None:
+            fields['extra'] = extra_selector
+
+        super(ChannelExtractor, self).__init__(selector=row_selector, fields=fields)
+
+
+class EntryExtractor:
+    """Aggregates multiple extractors to operate on a single entry"""
+
+    def __init__(self):
+        self._images_extractor = link_extractor(IMAGE_EXTENSIONS)
+        self._videos_extractor = link_extractor(VIDEO_EXTENSIONS)
+        self._streaming_extractor = RegexExtractor(STREAMING_EXTENSIONS)
+
+    def extract(self, doc, extract_title=False):
+        etree = ensure_element(doc)
+        image_urls = [row['url'] for row in self._images_extractor.extract(etree)]
+        video_urls = [row['url'] for row in self._videos_extractor.extract(etree)]
+        streaming_urls = self._streaming_extractor.extract(doc)
+
+        return {
+            'images': image_urls,
+            'videos': video_urls,
+            'streaming': streaming_urls
+        }
+
+
+class RegexExtractor:
+
+    """Extracts text fragment from document using regular expression"""
+
+    def __init__(self, extensions):
+        ext_frag = '\.(?:%s)' % '|'.join(extensions)
+        self._ext_rx = re.compile('([\w\.\-\/]+%s)' % ext_frag, re.IGNORECASE)
+
+    def extract(self, doc):
+        return [url for url in self._ext_rx.findall(doc)]
+
+
+def first_or_none(scalar_or_seq):
+    """Returns first element if argument is a sequence, or argument itself if it is not iterable"""
+    if isinstance(scalar_or_seq, str):
+        return scalar_or_seq
+
+    try:
+        return next(iter(scalar_or_seq), None)
+
+    except TypeError:
+        return scalar_or_seq
 
 
 def ensure_element(doc_or_tree):
+    """Returns lxml.html.HtmlElement, creates it from string if necessary"""
     if isinstance(doc_or_tree, lxml.html.HtmlElement):
         return doc_or_tree
 
@@ -67,73 +133,25 @@ def ensure_element(doc_or_tree):
         raise ParseError(message) from e
 
 
-def first_or_none(scalar_or_seq):
-    if isinstance(scalar_or_seq, str):
-        return scalar_or_seq
-
-    try:
-        return next(iter(scalar_or_seq or []), None)
-
-    except TypeError:
-        return scalar_or_seq
-
-
 def xpath_tolower(what):
     """Uses XPath 1.0 translate() to emulate XPAth 2.0 lower-case()"""
 
     return "translate({}, '{}', '{}')".format(what, ascii_uppercase, ascii_lowercase)
 
 
+def link_extractor(extensions):
+    """Create extractor that extracts direct links to files (images, video, etc)"""
+    href_nocase = xpath_tolower('@href')
+    ext_fragment = ext_selector_fragment(href_nocase, extensions)
+    selector = "//a[%s]//img[@src]" % ext_fragment      # XXX Do we really need thumbnails?
+
+    return DatasetExtractor(
+        selector=selector,
+        fields={'url': 'ancestor::a/@href'}
+    )
+
+
 def ext_selector_fragment(what, extensions):
-    """XPath selector fragment to match filenames"""
-
-    what = xpath_tolower(what)
+    """XPath selector fragment to match filenames with given extensions"""
     ext_rx = '\.({})'.format('|'.join(extensions))
-    return "re:test({}, '{}')".format(what, ext_rx)
-
-
-class EntryExtractor:
-    """Set of extractors to operate on a single document"""
-
-    def __init__(self):
-        self._lxml_extractors = {}
-        self._text_extractors = {}
-
-    def add_extractor(self, alias, extractor, extractor_type='lxml'):
-        if extractor_type == 'lxml':
-            self._lxml_extractors[alias] = extractor
-        else:
-            self._text_extractors[alias] = extractor
-
-    def extract(self, doc):
-        rv = {}
-        etree = ensure_element(doc)
-
-        for alias, ex in self._lxml_extractors.items():
-            rv[alias] = ex.extract(etree)
-
-        for alias, ex in self._text_extractors.items():
-            rv.setdefault(alias, [])
-            rv[alias].extend(ex.extract(doc))
-
-        return rv
-
-    def extract_field(self, sel, doc):
-        ex = FieldExtractor(selector=sel)
-        elem = ensure_element(doc)
-        return first_or_none(ex.extract(elem))
-
-
-class ParseError(Exception):
-    """Something unexpected happened while parsing html"""
-
-
-class RegexExtractor:
-
-    def __init__(self, extensions):
-        ext_frag = '\.(?:%s)' % '|'.join(extensions)
-        self._ext_rx = re.compile('([\w\.\-\/]+%s)' % ext_frag, re.IGNORECASE)
-
-    def extract(self, doc):
-        urls = self._ext_rx.findall(doc)
-        return [{'url': url} for url in urls]
+    return "re:test({}, '{}')".format(what, ext_rx)     # XXX Maybe only match things *ending* with extension

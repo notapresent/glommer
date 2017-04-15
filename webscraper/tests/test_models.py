@@ -39,6 +39,12 @@ class EntryTestCase(TestCase):
         self.assertEqual(e1.real_url, 'http://one.com')
         self.assertEqual(e2.real_url, 'http://two.com')
 
+    def test_real_url_setter(self):
+        e1 = create_entry(url='http://one.com')
+        e1.real_url = 'http://two.com/'
+        self.assertEqual(e1.url, 'http://one.com')
+        self.assertEqual(e1.final_url, 'http://two.com/')
+
     def test_channel_url_constraint(self):
         c = create_channel()
         e1 = create_entry(channel=c, url='http://host.com/1')
@@ -47,6 +53,3 @@ class EntryTestCase(TestCase):
 
         with self.assertRaises(Exception):
             e2.save()
-
-
-

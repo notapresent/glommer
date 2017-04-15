@@ -102,5 +102,11 @@ class Entry(Model):
     def real_url(self):
         return self.final_url if self.final_url else self.url
 
+    @real_url.setter
+    def real_url(self, value):
+        if self.url != value:
+            self.final_url = value
+
+
     def __str__(self):
         return self.title

@@ -6,7 +6,7 @@ from collections import deque
 from .aiohttpdownloader import make_session, download_to_future
 from .futurelite import FutureLite
 from .insbuffer import InsertBuffer
-from .processing import process_channel, process_entry, make_entry_extractor
+from .processing import process_channel, process_entry, EntryExtractor
 
 # Default values
 CHANNEL_POOL_SIZE = 2
@@ -56,7 +56,7 @@ def scrape(channels):
     loop = asyncio.get_event_loop()
     buf = InsertBuffer(INSERT_BUFFER_SIZE)
     eq = asyncio.Queue(ENTRY_POOL_SIZE * 2, loop=loop)
-    ee = make_entry_extractor()
+    ee = EntryExtractor()
     scraper = AioScraper(loop=loop, insert_buffer=buf, entry_queue=eq, entry_extractor=ee)
     try:
         scraper.run(channels)

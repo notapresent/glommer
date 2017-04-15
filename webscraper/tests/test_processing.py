@@ -2,75 +2,16 @@ import unittest
 from unittest import mock
 
 from webscraper.models import Channel, Entry
-from webscraper.processing import (STATIC_EXTRACTOR_SETTINGS, make_static_extractor, make_channel_extractor,
-                                   process_channel, process_entry, parse_channel, parse_entry, normalize_item_set,
-                                   normalize_channel_row, make_entry_extractor, make_entry, ensure_entry_title,
-                                   highest_resolution, postprocess_items)
+from webscraper.processing import (process_channel, process_entry, parse_channel, populate_entry, normalize_item_set,
+                                   normalize_channel_row, postprocess_items, highest_resolution)
 from webscraper.futurelite import FutureLite
 from webscraper.aiohttpdownloader import DownloadError
-from webscraper.extractors import ParseError
-from django.db.models import Model
+from webscraper.extractors import ParseError, EntryExtractor
+
 from django.core.exceptions import ValidationError
 
 from django.test import TestCase
 from .util import create_channel, CHANNEL_DEFAULTS, ENTRY_DEFAULTS
-
-
-class ExtractorsTestCase(unittest.TestCase):
-    IMAGES_TEST_DOC = '''
-            <a href="1.JPEG"><img src="1tn.jpg"></a>
-            <a href="2.png"><img src="2t.jpg"></a>
-            <a href="3.txt"><img src="3t.jpg"></a>  <!-- Wrong filetype, skipped -->
-            <a href="4.jpg">Just text</a>        <!-- No thumbnail, skipped -->
-        '''
-
-    def test_static_extractor_extracts_images(self):
-        extractor = make_static_extractor(*STATIC_EXTRACTOR_SETTINGS['images'])
-
-        rv = extractor.extract(self.IMAGES_TEST_DOC)
-        self.assertEqual(len(rv), 2)
-        self.assertIn({'url': '1.JPEG'}, rv)
-        self.assertIn({'url': '2.png'}, rv)
-
-    def test_video_extractor_extracts_videos(self):
-        extractor = make_static_extractor(*STATIC_EXTRACTOR_SETTINGS['videos'])
-        doc = '''
-            <a href="1.avi"><img src="1tn.jpg"></a>
-            <a href="2.Mpg"><img src="2t.jpg"></a>
-        '''
-        rv = extractor.extract(doc)
-        self.assertEqual(len(rv), 2)
-        self.assertIn({'url': '1.avi'}, rv)
-        self.assertIn({'url': '2.Mpg'}, rv)
-
-    def test_make_channel_extractor(self):
-        channel = Channel(**CHANNEL_DEFAULTS)
-        channel.extra_selector = '@title'
-        extractor = make_channel_extractor(channel)
-        rv = extractor.extract('<a href="1.html" title="extra">Title</a><a>text</a>')
-        self.assertEqual(len(rv), 1)
-        row = rv[0]
-        self.assertEqual(row['extra'], 'extra')
-        self.assertEqual(row['title'], 'Title')
-        self.assertEqual(row['url'], '1.html')
-
-    def test_make_entry_extractor_returns_extractor(self):
-        ee = make_entry_extractor()
-        rv = ee.extract(self.IMAGES_TEST_DOC)
-        self.assertEqual(len(rv['images']), 2)
-        self.assertEqual(len(rv['videos']), 0)
-        self.assertEqual(len(rv['streaming']), 0)
-
-    def test_extractor_extracts_nested(self):
-        doc = '''
-        <a href="1.jpg"><font style="">
-        <img src="1tn.jpg">
-        Some text
-        </font></a>
-        '''
-        ee = make_entry_extractor()
-        rv = ee.extract(doc)
-        self.assertEqual(rv['images'], [{'url': '1.jpg'}])
 
 
 class FakeResponse:
@@ -83,7 +24,7 @@ class FakeEntryExtractor:
 
     DEFAULT_EXTRACT_RV = {
         'images': [],
-        'videos': [{'url': '1.avi'}, {'url': 'http://ho.st/2.avi'}]
+        'videos': ['1.avi', 'http://ho.st/2.avi']
     }
 
     def __init__(self, extract_rv=None):
@@ -140,19 +81,6 @@ class ChannelProcessingTestCase(TestCase):
         rv = parse_channel(channel, 'http://host.com/', doc)
         self.assertEquals(len(list(rv)), 0)
 
-    def test_make_entry_returns_entry(self):
-        row = {'url': 'http://host.com', 'title': 'test'}
-        rv = make_entry(row)
-        self.assertEquals(rv.url, 'http://host.com')
-        self.assertEquals(rv.title, 'test')
-        self.assertIs(rv.__class__, Entry)
-        self.assertIsInstance(rv, Model)
-
-    def test_make_entry_raises_on_invalid_row(self):
-        row = {'url': 'invalid url', 'title': ''}
-        with self.assertRaises(ValidationError):
-            make_entry(row)
-
 
 class EntryProcessingTestCase(unittest.TestCase):
 
@@ -195,63 +123,45 @@ class EntryProcessingTestCase(unittest.TestCase):
         process_entry(entry, self.future, self.extractor)
         self.assertEqual(entry.final_url, resp.url)
 
-    def test_ensure_entry_title_returns_title_if_set(self):
-        e = Entry(**ENTRY_DEFAULTS)
-        original_title = e.title
-        ensure_entry_title(e, '<html></html', FakeEntryExtractor())
-        self.assertEquals(e.title, original_title)
-
-    def test_ensure_entry_title_extracts_title_if_not_set(self):
-        e = Entry(**ENTRY_DEFAULTS)
-        e.title = ''
-        ensure_entry_title(e, '<html></html', FakeEntryExtractor('new title'))
-        self.assertEquals(e.title, 'new title')
-
-    def test_ensure_entry_title_raises(self):
-        e = Entry(**ENTRY_DEFAULTS)
-        e.title = ''
-        with self.assertRaises(ParseError):
-            ensure_entry_title(e, '<html></html', FakeEntryExtractor(''))
-
     def test_postprocess_items_deduplicates(self):
         items = {
             'key1': ['1', '2'],
             'key2': ['2', '3'],
         }
-        rv = postprocess_items(items)
+        rv = postprocess_items(items, '')
         resulting_items = [url for sublist in rv.values() for url in sublist]
         self.assertEqual(len(resulting_items), len(set(resulting_items)))
 
 
 class ParsingTestCase(unittest.TestCase):
 
-    def test_parse_entry_result(self):
-        ee = FakeEntryExtractor()
-        entry = Entry(title='title', url='http://ho.st/', channel_id=1)
-        rv = parse_entry(entry, '', ee)
+    # def test_populate_entry_populates(self):
+    #     ee = EntryExtractor()
+    #     entry = Entry(title='title', url='http://ho.st/', channel_id=1)
+    #     populate_entry(entry, '<a href="1.html"><img src="1th.jpg"></a>', ee)
 
-        self.assertEqual(len(rv), 1)
-        iset_name, iset = rv.popitem()
+    #     self.assertEqual(entry.items, 1)
+    #     iset_name, iset = entry.items.popitem()
 
-        self.assertEqual(iset_name, 'videos')
-        for url in iset:
-            self.assertTrue(url.startswith(entry.real_url))
+    #     self.assertEqual(iset_name, 'images')
+    #     for url in iset:
+    #         self.assertTrue(url.startswith(entry.real_url))
 
-    @mock.patch('webscraper.processing.DatasetExtractor')
-    def test_parse_channel_result(self, dse):   # TODO split this
-        base_url = 'http://ho.st/'
-        mock_extractor = unittest.mock.Mock()
-        mock_extractor.extract.return_value = [
-            {'url': '1.html', 'title': 'title 1', 'extra': 'extra 1'},
-            {'url': base_url + '2.html', 'title': 'title 2', 'extra': 'extra 2'}
-        ]
-        dse.return_value = mock_extractor
-        channel = Channel(**CHANNEL_DEFAULTS)
-        rv = list(parse_channel(channel, base_url, ''))
-        self.assertEqual(len(rv), 2)
-        self.assertIsInstance(rv[0], Entry)
-        self.assertIsInstance(rv[1], Entry)
-        self.assertIs(rv[0].channel, channel)
+    # @mock.patch('webscraper.processing.DatasetExtractor')
+    # def test_parse_channel_result(self, dse):   # TODO split this
+    #     base_url = 'http://ho.st/'
+    #     mock_extractor = unittest.mock.Mock()
+    #     mock_extractor.extract.return_value = [
+    #         {'url': '1.html', 'title': 'title 1', 'extra': 'extra 1'},
+    #         {'url': base_url + '2.html', 'title': 'title 2', 'extra': 'extra 2'}
+    #     ]
+    #     dse.return_value = mock_extractor
+    #     channel = Channel(**CHANNEL_DEFAULTS)
+    #     rv = list(parse_channel(channel, base_url, ''))
+    #     self.assertEqual(len(rv), 2)
+    #     self.assertIsInstance(rv[0], Entry)
+    #     self.assertIsInstance(rv[1], Entry)
+    #     self.assertIs(rv[0].channel, channel)
 
     def test_normalize_channel_row(self):
         row = {'url': ' http://host.com/ ', 'title': ' title ', 'extra': ' extra'}

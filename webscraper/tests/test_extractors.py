@@ -1,9 +1,35 @@
 import unittest
+from unittest.mock import Mock
+
 
 import lxml.html
 
 from webscraper.extractors import (FieldExtractor, RowExtractor, DatasetExtractor, ensure_element, first_or_none,
-                                   EntryExtractor, xpath_tolower, ext_selector_fragment, ParseError, RegexExtractor)
+                                   EntryExtractor, xpath_tolower, ext_selector_fragment, ParseError, RegexExtractor,
+                                   ChannelExtractor, EntryExtractor, link_extractor)
+from webscraper.models import Channel
+from .util import CHANNEL_DEFAULTS
+
+
+class RowExtractorTestCase(unittest.TestCase):
+
+    def test_extract_extracts_items(self):
+        e = RowExtractor(selector="//p[@class='a']/text()")
+        doc = '<div><p class="a">One</p><p class="a">Two</p><p class="b">Three</p></div>'
+        rv = e.extract(doc)
+        self.assertEqual(len(rv), 2)
+        self.assertIn('One', rv)
+        self.assertIn('Two', rv)
+
+    def test_extractor_raises_on_invalid_doc(self):
+        e = RowExtractor(selector="//p")
+        with self.assertRaises(ParseError):
+            e.extract('')
+
+    def test_regexp_selector(self):
+        self.extractor = RowExtractor(selector="//a[re:test(@href, '\.(jpg|png)$')]/@href")
+        self.assertEqual(self.extractor.extract('<a href="1.jpg">1</a>'), ['1.jpg'])
+        self.assertEqual(self.extractor.extract('<a href="/dir/2.png.txt">2</a>'), [])
 
 
 class FieldExtractorTestCase(unittest.TestCase):
@@ -15,77 +41,92 @@ class FieldExtractorTestCase(unittest.TestCase):
         rv = self.extractor.extract('<a>some text</a>')
         self.assertEqual(rv, 'some text')
 
-    def test_extract_accepts_lxml_htmlelement(self):
-        elem = '<a>test text</a>'
-        rv = self.extractor.extract(elem)
-        self.assertEqual(rv, 'test text')
-
     def test_extract_returns_1st_element_only(self):
         rv = self.extractor.extract('<p><a>One</a><a>Two</a>')
         self.assertEqual(rv, 'One')
 
-    def test_regexp_selector(self):
-        self.extractor = FieldExtractor(selector="//a[re:test(@href, '\.(jpg|png)$')]/@href")
-        self.assertEqual(self.extractor.extract('<a href="1.jpg">1</a>'), '1.jpg')
-        self.assertEqual(self.extractor.extract('<a href="/dir/2.png">2</a>'), '/dir/2.png')
-
-    def test_ext_selector_fragment(self):
-        doc = '<img src="1.png"><img src="2.bmp"><img src="3.jpg">'
-        frag = ext_selector_fragment('@src', ['jpg', 'png'])
-        selector = '//img[{}]/@src'.format(frag)
-        ex = RowExtractor(selector=selector)
-        rv = ex.extract(doc)
-        self.assertEqual(len(rv), 2)
-        self.assertIn('1.png', rv)
-        self.assertIn('3.jpg', rv)
-
-
-class RowExtractorTestCase(unittest.TestCase):
-
-    def test_extract_extracts_items(self):
-        e = RowExtractor(selector="//p[@class='a']")
-        doc = '<div><p class="a">One</p><p class="a">Two</p><p class="b">Three</p></div>'
-        rv = e.extract(doc)
-        self.assertEqual(len(rv), 2)
-        self.assertEqual(rv[0].text, 'One')
-        self.assertEqual(rv[1].text, 'Two')
-
-    def test_extractor_raises_on_invalid_doc(self):
-        e = RowExtractor(selector="//p[@class='a']")
-        with self.assertRaises(ParseError):
-            e.extract('')
-
 
 class DatasetExtractorTestCase(unittest.TestCase):
 
-    def setUp(self):
-        self.doc = '''
-        <div>
-            <p><a>1-1</a><i>1-2</i></p>
-            <p><a>2-1</a><i>2-2</i></p>
-        </div>
-        '''
-        self.row_selector = '//div/p'
-        self.field_selectors = {
-            'col1': {'selector': './a/text()'},
-            'col2': {'selector': './i/text()'}
+    def test_extract_extracts_rows(self):
+        doc = '''<div>
+            <a href="1.html">1</a>
+            <a href="2.html">2</a>
+        </div>'''
+        row_selector = '//div/a'
+        field_selectors = {
+            'text':  'text()',
+            'url': '@href'
         }
 
-    def test_extract_extracts(self):
-        e = DatasetExtractor(selector=self.row_selector, fields=self.field_selectors)
-        rv = e.extract(self.doc)
+        e = DatasetExtractor(selector=row_selector, fields=field_selectors)
+        rv = e.extract(doc)
+
         self.assertEqual(len(rv), 2)
-        self.assertEqual(rv[0], {'col1': '1-1', 'col2': '1-2'})
-        self.assertEqual(rv[1], {'col1': '2-1', 'col2': '2-2'})
+        self.assertEqual(rv[0], {'text': '1', 'url': '1.html'})
+        self.assertEqual(rv[1], {'text': '2', 'url': '2.html'})
 
 
-class UtilsTestCase(unittest.TestCase):
+class ChannelExtractorTestCase(unittest.TestCase):
+    def test_extacts(self):
+        doc = '''<p>
+            <a href="1.html">test</a>
+        </p>
+        '''
+        e = ChannelExtractor(row_selector='//p/a', url_selector='@href', title_selector='text()')
+        rv = e.extract(doc)
+        row = rv[0]
+        self.assertEqual(len(rv), 1)
+        self.assertEqual(row['url'], '1.html')
+        self.assertEqual(row['title'], 'test')
 
-    def test_ensure_element_returs_htmlelement(self):
-        doc = '<p>test</p>'
-        elem = lxml.html.fromstring(doc)
-        self.assertIsInstance(ensure_element(doc), lxml.html.HtmlElement)
-        self.assertIsInstance(ensure_element(elem), lxml.html.HtmlElement)
+
+class RegexExtractorTestCase(unittest.TestCase):
+
+    def test_extracts(self):
+        ex = RegexExtractor(['doc'])
+        doc = '''<html><script>var url='path/to/file.doc';</script></html>'''
+        self.assertEquals(ex.extract(doc), ['path/to/file.doc'])
+
+
+class EntryExtractorTestCase(unittest.TestCase):
+    def test_extracts_images(self):
+        doc = '<a href="image.jpg"><img src="image_tn.jpg"></a>'
+        ee = EntryExtractor()
+        rv = ee.extract(doc)
+        self.assertEqual(len(rv['images']), 1)
+
+    def test_extracts_movies(self):
+        doc = '<a href="movie.avi"><img src="movie_tn.jpg"></a>'
+        ee = EntryExtractor()
+        rv = ee.extract(doc)
+        self.assertEqual(len(rv['videos']), 1)
+
+    def test_extracts_streaming(self):
+        doc = '<video><source src="streaming.mp4" type="video/mp4"></video>'
+        ee = EntryExtractor()
+        rv = ee.extract(doc)
+        self.assertEqual(len(rv['streaming']), 1)
+
+    @unittest.mock.patch('webscraper.extractors.link_extractor')
+    def test_entry_extractor_uses_same_tree(self, static_extractor):
+        me = Mock(DatasetExtractor)
+        me.extract.return_value = [{'url': '1'}, {'url': '2'}]
+        static_extractor.return_value = me
+        ee = EntryExtractor()
+        ee.extract('<xml></xml>')
+        self.assertEqual(me.extract.call_args_list[0], me.extract.call_args_list[1])
+
+
+class UtilTestCase(unittest.TestCase):
+
+    def test_ensure_element_returs_htmlelement_from_string(self):
+        rv = ensure_element('<p>test</p>')
+        self.assertIsInstance(rv, lxml.html.HtmlElement)
+
+    def test_ensure_element_returs_htmlelement_unchanged(self):
+        rv = ensure_element('<p>test</p>')
+        self.assertIs(rv, ensure_element(rv))
 
     def test_ensure_element_raises_on_invalid_doc(self):
         with self.assertRaises(ParseError):
@@ -106,39 +147,23 @@ class UtilsTestCase(unittest.TestCase):
         self.assertIs(first_or_none(s), s)
 
     def test_xpath_tolower(self):
-        rv = xpath_tolower('@href')
-        self.assertEqual(rv, "translate(@href, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')")
+        elem = ensure_element('<a href="Test.HTML"></a>')
+        rv = elem.xpath(xpath_tolower('@href'))
+        self.assertEqual(rv, 'test.html')
 
+    def test_ext_selector_fragment(self):
+        selector = ext_selector_fragment('@href', ['jpeg', 'png'])
+        rv = FieldExtractor(selector=selector).extract('<a href="file.jpeg"></a>')
+        self.assertTrue(rv)
 
-class EntryExtractorTestCase(unittest.TestCase):
+    def test_link_extractor_extracts(self):
+        extractor = link_extractor(['png'])
+        rv = extractor.extract('<a href="2.png"><img src="2tn.jpg"></a>')
+        row = rv[0]
+        self.assertEqual(len(rv), 1)
+        self.assertEqual(row['url'], '2.png')
 
-    def test_entry_extractor_uses_same_tree(self):
-
-        class ExtractorStub:
-
-            def __init__(self):
-                self.extract_args = []
-
-            def extract(self, doc_or_tree):
-                self.extract_args.append(doc_or_tree)
-
-        e1, e2 = ExtractorStub(), ExtractorStub()
-        entry_extractor = EntryExtractor()
-        entry_extractor.add_extractor('1', e1)
-        entry_extractor.add_extractor('2', e2)
-        entry_extractor.extract('<xml></xml>')
-        self.assertEqual(e1.extract_args, e2.extract_args)
-
-    def test_extract_field_extracts(self):
-        ee = EntryExtractor()
-        val = ee.extract_field('//title/text()', '<html><title>Test</title></html>')
-        self.assertEqual(val, 'Test')
-
-
-class RegexExtractorTestCase(unittest.TestCase):
-
-    def test_extracts(self):
-        ex = RegexExtractor(['doc'])
-        doc = '''<html><script>var url='path/to/file.doc';</script></html>'''
-        expected = [{'url': 'path/to/file.doc'}]
-        self.assertEquals(expected, ex.extract(doc))
+    def test_link_extractor_nocase(self):
+        extractor = link_extractor(['png'])
+        rv = extractor.extract('<a href="2.PNG"><img src="2tn.jpg"></a>')
+        self.assertEqual(rv[0]['url'], '2.PNG')
