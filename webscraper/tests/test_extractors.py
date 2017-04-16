@@ -108,7 +108,7 @@ class EntryExtractorTestCase(unittest.TestCase):
         rv = ee.extract(doc)
         self.assertEqual(len(rv['streaming']), 1)
 
-    @unittest.mock.patch('webscraper.extractors.link_extractor')
+    @unittest.mock.patch('webscraper.extractors.link_extractor', autospec=True)
     def test_entry_extractor_uses_same_tree(self, static_extractor):
         me = Mock(DatasetExtractor)
         me.extract.return_value = [{'url': '1'}, {'url': '2'}]
