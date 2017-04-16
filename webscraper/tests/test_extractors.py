@@ -68,6 +68,7 @@ class DatasetExtractorTestCase(unittest.TestCase):
 
 
 class ChannelExtractorTestCase(unittest.TestCase):
+
     def test_extacts(self):
         doc = '''<p>
             <a href="1.html">test</a>
@@ -90,6 +91,7 @@ class RegexExtractorTestCase(unittest.TestCase):
 
 
 class EntryExtractorTestCase(unittest.TestCase):
+
     def test_extracts_images(self):
         doc = '<a href="image.jpg"><img src="image_tn.jpg"></a>'
         ee = EntryExtractor()
@@ -126,6 +128,7 @@ class EntryExtractorTestCase(unittest.TestCase):
         ee = EntryExtractor()
         with self.assertRaises(ParseError):
             ee.extract('')
+
 
 class UtilTestCase(unittest.TestCase):
 

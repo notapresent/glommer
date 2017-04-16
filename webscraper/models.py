@@ -107,6 +107,5 @@ class Entry(Model):
         if self.url != value:
             self.final_url = value
 
-
     def __str__(self):
         return self.title

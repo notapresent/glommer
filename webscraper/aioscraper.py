@@ -75,6 +75,7 @@ async def channel_worker(worker_no, channel_queue, entry_queue, session):
         fut = FutureLite()
         await download_to_future(channel.url, fut, session=session)
         new_entries = process_channel(channel, fut)
+        channel.save()
 
         for entry in new_entries:
             await entry_queue.put(entry)
