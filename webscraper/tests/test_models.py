@@ -24,6 +24,18 @@ class ChannelTestCase(TestCase):
         other_channel.save()
         self.assertNotEqual(channel.slug, other_channel.slug)
 
+    def test_title_with_link(self):
+        c = Channel(**CHANNEL_DEFAULTS)
+        rv = c.title_with_link()
+        self.assertIn(c.title, rv)
+        self.assertIn(c.url, rv)
+
+    def test_feed_link(self):
+        c = Channel(**CHANNEL_DEFAULTS)
+        c.save()    # slug generated on first save
+        rv = c.feed_link()
+        self.assertIn(c.slug, rv)
+
 
 class EntryTestCase(TestCase):
 
@@ -53,3 +65,14 @@ class EntryTestCase(TestCase):
 
         with self.assertRaises(Exception):
             e2.save()
+
+    def test_title_with_link(self):
+        e = Entry(**ENTRY_DEFAULTS)
+        rv = e.title_with_link()
+        self.assertIn(e.title, rv)
+        self.assertIn(e.real_url, rv)
+
+    def test_site(self):
+        e = Entry(url='http://somehost.com/doc.html')
+        rv = e.site()
+        self.assertEquals(rv, 'somehost.com')
