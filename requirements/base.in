@@ -9,3 +9,4 @@ aiodns
 whitenoise
 gunicorn
 raven
+django-prettyjson

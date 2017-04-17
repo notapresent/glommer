@@ -1,6 +1,14 @@
 from django import forms
 from django.contrib import admin
 from .models import Channel, Entry
+from django.contrib.postgres.fields import JSONField
+from prettyjson import PrettyJSONWidget
+
+
+class JsonAdmin(admin.ModelAdmin):
+    formfield_overrides = {
+        JSONField: {'widget': PrettyJSONWidget}
+    }
 
 
 class ChannelAdminForm(forms.ModelForm):
@@ -31,7 +39,7 @@ class ChannelAdmin(admin.ModelAdmin):
 
 
 @admin.register(Entry)
-class EntryAdmin(admin.ModelAdmin):
+class EntryAdmin(JsonAdmin):
     date_hierarchy = 'added'
     list_display = ('id', 'title_with_link', 'added', 'site', 'status')
     list_filter = ['channel', 'status']

@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     # 'django.contrib.messages',
     'whitenoise.runserver_nostatic',    # disable built-in server static file serving
     'django.contrib.staticfiles',
+    'prettyjson',
 ]
 
 MIDDLEWARE = [
