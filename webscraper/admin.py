@@ -12,11 +12,10 @@ class ChannelAdminForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(ChannelAdminForm, self).__init__(*args, **kwargs)
-        self.fields['slug'].widget.attrs['readonly'] = True
+        self.fields['slug'].disabled = True
 
         instance = getattr(self, 'instance', None)
         if not instance or not instance.pk:
-            self.fields['slug'].widget = forms.HiddenInput()
             self.fields['slug'].required = False
 
 
