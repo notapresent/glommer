@@ -1,10 +1,7 @@
-from urllib.parse import urlparse
 from django.contrib.postgres.fields import JSONField
 from django.db.models import (Model, CharField, DateTimeField, ForeignKey, URLField, CASCADE, BooleanField,
                               IntegerField)
 from django.utils.crypto import get_random_string
-from django.utils.html import format_html
-from django.urls import reverse
 
 from .managers import ChannelManager, EntryManager
 
@@ -68,16 +65,6 @@ class Channel(Model):
     def __str__(self):
         return self.title
 
-    # Admin-related stuff
-    enabled.boolean = True
-
-    def title_with_link(self):
-        return format_html('<a target="_blank" href="{}">{}</a>', self.url, self.title)
-
-    def feed_link(self):
-        link = reverse('feed', kwargs={'channel_slug': self.slug})
-        return format_html('<a href="{}" target="_blank">feed</a>', link)
-
 
 class Entry(Model):
     """Represents content entry"""
@@ -122,14 +109,3 @@ class Entry(Model):
 
     def __str__(self):
         return self.title
-
-    # Admin-related stuff
-
-    def title_with_link(self):
-        return format_html('<a target="_blank" href="{}">{}</a>', self.real_url, self.title)
-
-    title_with_link.short_description = 'Title'
-
-    def site(self):
-        parsed = urlparse(self.real_url)
-        return parsed.netloc
