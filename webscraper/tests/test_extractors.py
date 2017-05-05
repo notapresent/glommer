@@ -29,6 +29,12 @@ class RowExtractorTestCase(unittest.TestCase):
         self.assertEqual(self.extractor.extract('<a href="1.jpg">1</a>'), ['1.jpg'])
         self.assertEqual(self.extractor.extract('<a href="/dir/2.png.txt">2</a>'), [])
 
+    def test_resolves_base(self):
+        e = RowExtractor(selector='//a/@href')
+        doc = '<html><base href="http://host.com/dir/"><a href="1.doc">1</a></html'
+        rv = e.extract(doc)
+        self.assertEquals(rv[0], 'http://host.com/dir/1.doc')
+
 
 class FieldExtractorTestCase(unittest.TestCase):
 
