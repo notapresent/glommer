@@ -45,7 +45,7 @@ class ProcessChannelTestCase(TestCase):
         process_channel(self.channel, self.future)
         self.assertEqual(self.channel.status, Channel.ST_WARNING)
 
-    def test_returns_new_entries(self):
+    def test_returns_only_new_entries(self):
         self.channel.save()
         entry_fields = ENTRY_DEFAULTS.copy()
         entry_fields['url'] = 'http://old_url.com'
@@ -61,8 +61,8 @@ class ParseChannelTestCase(unittest.TestCase):
         self.channel = Channel(**CHANNEL_DEFAULTS)
 
     def test_skips_invalid_entries(self):
-        rv1 = parse_channel(self.channel, '', '<a href="invalid_url">Title</a>')  # invalid URL
-        rv2 = parse_channel(self.channel, '', '<a href="http://host.com/"></a>')  # Empty title
+        rv1 = parse_channel(self.channel, '.', '<a href="invalid_url">Title</a>')  # invalid URL
+        rv2 = parse_channel(self.channel, '.', '<a href="http://host.com/"></a>')  # Empty title
         self.assertEqual(len(list(rv1)), 0)
         self.assertEqual(len(list(rv2)), 0)
 

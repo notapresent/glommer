@@ -5,10 +5,8 @@ from unittest.mock import Mock
 import lxml.html
 
 from webscraper.extractors import (FieldExtractor, RowExtractor, DatasetExtractor, ensure_element, first_or_none,
-                                   EntryExtractor, xpath_tolower, ext_selector_fragment, ParseError, RegexExtractor,
+                                   xpath_tolower, ext_selector_fragment, ParseError, RegexExtractor,
                                    ChannelExtractor, EntryExtractor, link_extractor)
-from webscraper.models import Channel
-from .util import CHANNEL_DEFAULTS
 
 
 class RowExtractorTestCase(unittest.TestCase):
@@ -75,10 +73,10 @@ class ChannelExtractorTestCase(unittest.TestCase):
         </p>
         '''
         e = ChannelExtractor(row_selector='//p/a', url_selector='@href', title_selector='text()')
-        rv = e.extract(doc)
+        rv = e.extract(doc, 'http://host.com/')
         row = rv[0]
         self.assertEqual(len(rv), 1)
-        self.assertEqual(row['url'], '1.html')
+        self.assertEqual(row['url'], 'http://host.com/1.html')
         self.assertEqual(row['title'], 'test')
 
 
@@ -87,7 +85,7 @@ class RegexExtractorTestCase(unittest.TestCase):
     def test_extracts(self):
         ex = RegexExtractor(['doc'])
         doc = '''<html><script>var url='path/to/file.doc';</script></html>'''
-        self.assertEquals(ex.extract(doc), ['path/to/file.doc'])
+        self.assertEquals(ex.extract(doc, '/'), ['/path/to/file.doc'])
 
 
 class EntryExtractorTestCase(unittest.TestCase):

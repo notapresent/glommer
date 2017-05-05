@@ -1,11 +1,10 @@
 import logging
-import re
-from urllib.parse import urljoin
 
 from django.core.exceptions import ValidationError
+
 from .aiohttpdownloader import DownloadError
 from .extractors import ChannelExtractor, EntryExtractor, ParseError
-from .postprocessing import postprocess_urlset, postprocess_items
+from .postprocessing import postprocess_items
 from .models import Channel, Entry
 
 
@@ -45,9 +44,7 @@ def parse_channel(channel, base_url, html):
     """Generates sequence of entries from channel html"""
     extractor = extractor_from_channel(channel)
 
-    for row in extractor.extract(html):
-        row['url'] = urljoin(base_url, row['url'])
-
+    for row in extractor.extract(html, base_url):
         try:
             entry = Entry(channel=channel, **row)
             entry.clean_fields(exclude=['channel'])
@@ -88,9 +85,6 @@ def process_entry(entry, fut):
 
 def parse_entry(base_url, html):
     """Parse entry html, return sets of item urls"""
-    extracted = EntryExtractor.extract_items(html)
-
-    for set_name in extracted.keys():
-        extracted[set_name] = postprocess_urlset(extracted[set_name], base_url)
+    extracted = EntryExtractor.extract_items(html, base_url)
 
     return postprocess_items(extracted)

@@ -1,7 +1,7 @@
 import unittest
 
 from webscraper.postprocessing import (highest_resolution, highest_res_from_group, group_by_resolution,
-                                       postprocess_urlset, postprocess_items, deduplicate_urlsets)
+                                       postprocess_items, deduplicate_urlsets)
 
 
 class HighestResolutionTestCase(unittest.TestCase):
@@ -24,14 +24,6 @@ class HighestResolutionTestCase(unittest.TestCase):
 
 
 class UrlPostprocessingTestCase(unittest.TestCase):
-
-    def test_postprocess_urlset_strips_whitespace(self):
-        rv = postprocess_urlset([' http://host.com/1 '], '')
-        self.assertEqual(rv, ['http://host.com/1'])
-
-    def test_postprocess_urlset_returns_absolute_urls(self):
-        rv = postprocess_urlset(['1.jpg'], 'http://host.com')
-        self.assertEqual(rv, ['http://host.com/1.jpg'])
 
     def test_deduplicate_deduplicates(self):
         items = {

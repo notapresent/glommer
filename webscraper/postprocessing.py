@@ -1,16 +1,10 @@
 """Functions for post-processing urls and url sets"""
 import re
-from urllib.parse import urljoin
 
 
 COMMON_RESOLUTIONS = ['hd_720', 'sd_480', 'sd_360', 'sd_240']
 
 res_rx = re.compile('^(?P<prefix>.+)(?P<res>{})(?P<suffix>.+)$'.format('|'.join(COMMON_RESOLUTIONS)), re.I)
-
-
-def postprocess_urlset(urls, base_url):
-    urls = map(str.strip, urls)
-    return [urljoin(base_url, url) for url in urls]
 
 
 def postprocess_items(urlsets):
