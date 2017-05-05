@@ -42,7 +42,7 @@ def process_channel(channel, fut):
 
 def parse_channel(channel, base_url, html):
     """Generates sequence of entries from channel html"""
-    extractor = extractor_from_channel(channel)
+    extractor = ChannelExtractor.from_channel(channel)
 
     for row in extractor.extract(html, base_url):
         try:
@@ -51,13 +51,7 @@ def parse_channel(channel, base_url, html):
             yield entry
 
         except ValidationError as e:
-            logger.warn("Invalid row %r in channel %r" % (row, channel))
-
-
-def extractor_from_channel(channel):
-    param_names = ['row_selector', 'url_selector', 'title_selector', 'extra_selector']
-    params = {k: getattr(channel, k) or None for k in param_names}
-    return ChannelExtractor(**params)
+            logger.warning("Invalid row %r in channel %r" % (row, channel))
 
 
 def process_entry(entry, fut):

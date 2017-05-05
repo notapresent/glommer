@@ -73,6 +73,13 @@ class ChannelExtractor(DatasetExtractor):
 
         super(ChannelExtractor, self).__init__(selector=row_selector, fields=fields)
 
+    @classmethod
+    def from_channel(cls, channel):
+        """Create instance from channel fields"""
+        param_names = ['row_selector', 'url_selector', 'title_selector', 'extra_selector']
+        params = {param: getattr(channel, param) or None for param in param_names}
+        return cls(**params)
+
 
 class EntryExtractor:
     """Aggregates multiple extractors to operate on a single entry"""
