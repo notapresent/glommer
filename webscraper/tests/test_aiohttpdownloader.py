@@ -4,7 +4,7 @@ from functools import wraps
 
 from vcr_unittest import VCRMixin
 
-from webscraper.aiohttpdownloader import fetch, DownloadError, make_session, download_to_future
+from webscraper.aiohttpdownloader import fetch, DownloadError, RetryableDownloadError, make_session, download_to_future
 from webscraper.futurelite import FutureLite
 from .util import AsyncioTestCase
 
@@ -21,6 +21,11 @@ class AioHttpDownloaderTestCase(VCRMixin, AsyncioTestCase):
         coro = with_session(fetch, loop=self.loop)
         with self.assertRaises(DownloadError):
             self.loop.run_until_complete(coro('http://httpbin.org/status/404'))
+
+    def test_raises_retryable_on_server_error(self):
+        coro = with_session(fetch, loop=self.loop)
+        with self.assertRaises(RetryableDownloadError):
+            self.loop.run_until_complete(coro('https://httpbin.org/status/500'))
 
     def test_get_raises_on_nx_domain(self):
         coro = with_session(fetch, loop=self.loop)
@@ -47,6 +52,11 @@ class AioHttpDownloaderTestCase(VCRMixin, AsyncioTestCase):
         self.loop.run_until_complete(coro('http://httpbin.org/status/404', fut))
         with self.assertRaises(DownloadError):
             fut.result()
+
+    def test_timeout_raises_retryable(self):
+        coro = with_session(fetch, loop=self.loop, timeout=0.1)
+        with self.assertRaises(RetryableDownloadError):
+            self.loop.run_until_complete(coro('https://httpbin.org/delay/1'))
 
 
 class TimeoutTestCase(AsyncioTestCase):

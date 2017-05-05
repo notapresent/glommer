@@ -8,7 +8,7 @@ DEFAULT_HEADERS = {'User-agent': 'Mozilla/5.0 Gecko/20100101 glommer/1.0'}
 DEFAULT_TIMEOUT = 6  # seconds
 
 
-class DownloadError(Exception):     # TODO differentiate retryable and non-retryable errors
+class DownloadError(Exception):
 
     def __init__(self, message, **kw):
         super(DownloadError, self).__init__(message)
@@ -20,23 +20,32 @@ class DownloadError(Exception):     # TODO differentiate retryable and non-retry
         return "<%s(%s)>" % (self.__class__.__name__, ', '.join(args))
 
 
+class RetryableDownloadError(DownloadError):
+    pass
+
+
 async def fetch(url, *, session):
     try:
-        async with session.get(url, timeout=None) as resp:  # timeout=None to use session's timeout
+        async with session.get(url, timeout=None) as resp:
             resp.raise_for_status()
             body = await resp.text(errors='ignore')
+
+    except aiohttp.client_exceptions.ClientResponseError as e:
+        if 400 <= e.code < 500:
+            raise DownloadError(message=e.message, code=e.code) from e
+        else:
+            raise RetryableDownloadError(message=e.message, code=e.code) from e
 
     except aiohttp.client_exceptions.ClientError as e:
         message = getattr(e, 'message', repr(e))
         code = getattr(e, 'code', None)
         raise DownloadError(message, code=code) from e
 
-    except asyncio.TimeoutError as e:
-        raise DownloadError(message='# Timeout') from e
-
     except DNSError as e:
-        message = 'DNS error: %r' % e
-        raise DownloadError(message) from e
+        raise DownloadError('DNS error: %r' % e) from e
+
+    except asyncio.TimeoutError as e:
+        raise RetryableDownloadError(message='Timeout') from e
 
     return resp, body
 
