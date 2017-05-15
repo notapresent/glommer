@@ -6,7 +6,6 @@ from .models import Channel, Entry
 from django.contrib.postgres.fields import JSONField
 from prettyjson import PrettyJSONWidget
 from django.utils.html import format_html
-from django.utils.safestring import mark_safe
 from django.urls import reverse
 
 
@@ -17,24 +16,15 @@ class JsonAdmin(admin.ModelAdmin):
 
 
 class ChannelAdminForm(forms.ModelForm):
-
-    # feed_link = forms.URLField(disabled=True)
-
     class Meta:
         model = Channel
         fields = [
-            # 'feed_link',
-                  'title', 'url', 'enabled', 'interval', 'slug', 'status', 'row_selector', 'url_selector',
-                  'title_selector', 'extra_selector']
+            'title', 'url', 'enabled', 'interval', 'slug', 'status', 'row_selector', 'url_selector',
+            'title_selector', 'extra_selector']
 
     def __init__(self, *args, **kwargs):
         super(ChannelAdminForm, self).__init__(*args, **kwargs)
         self.fields['slug'].disabled = True
-        # self.fields['feed_link'].widget.initial_value = "http://blah.com/"
-
-        # import pdb; pdb.set_trace()
-        # self.fields['feed_link'].value = 'http://blah.com/'
-
         instance = getattr(self, 'instance', None)
         if not instance or not instance.pk:
             self.fields['slug'].required = False
@@ -61,7 +51,7 @@ class ChannelAdmin(admin.ModelAdmin):
     list_display = ('title', 'enabled', channel_feed_link, 'status')
     list_filter = ['status', 'enabled', 'interval']
     fieldsets = [
-         ('Feed link', {'fields': [channel_feed_link]}),
+        ('Feed link', {'fields': [channel_feed_link]}),
         ('Settings', {'fields': ['title', 'url', 'enabled', 'interval', 'slug', 'status']}),
         ('Selectors', {'fields': ['row_selector', 'url_selector', 'title_selector', 'extra_selector']}),
     ]
