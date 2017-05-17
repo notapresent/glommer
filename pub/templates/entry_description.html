@@ -2,7 +2,7 @@
 <p class="{{ set_name }}">
     {% for url in urls %}
         {% if set_name == 'images' %}
-        <a href="{{ url }}"><img src="{{ url }}"></a>
+        <img src="{{ url }}">
         {% else %}
         <video><source src="{{ url }}"></video>
         {% endif %}
