@@ -8,6 +8,7 @@ from webscraper.models import Channel, Entry
 
 
 class ChannelFeed(Feed):
+    ttl = 1440 # 60 minutes * 24 hours
 
     def get_object(self, request, channel_slug):
         return get_object_or_404(Channel, slug=channel_slug)
