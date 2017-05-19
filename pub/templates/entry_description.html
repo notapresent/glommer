@@ -1,3 +1,4 @@
+{% spaceless %}
 {% for set_name, urls in itemsets.items %}
 <p class="{{ set_name }}">
     {% for url in urls %}
@@ -9,3 +10,4 @@
     {% endfor %}
 </p>
 {% endfor %}
+{% endspaceless %}
