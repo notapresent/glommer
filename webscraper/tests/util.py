@@ -5,7 +5,7 @@ from webscraper.models import Channel, Entry
 
 CHANNEL_DEFAULTS = {
     'title': 'Channel title',
-    'interval': Channel.ST_OK,
+    'interval': Channel.I_1DAY,
     'enabled': True,
     'url': 'http://example.com/',
     'row_selector': '//a[@href]',
