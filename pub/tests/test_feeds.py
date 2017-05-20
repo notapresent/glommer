@@ -1,6 +1,6 @@
 from django.test import TestCase
 from pub.feeds import ChannelFeed
-from webscraper.tests.util import create_channel, create_entry
+from webscraper.tests.util import create_channel, create_entry  # TODO refactor to remove this dependency
 from django.test.client import RequestFactory
 from django.http.response import Http404
 
