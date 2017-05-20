@@ -4,11 +4,19 @@ from django.template.loader import get_template, render_to_string
 from webscraper.models import Channel, Entry
 
 
-# template = get_template('entry_description.html')
-
+FEED_TTL = {
+    Channel.I_1DAY: 1440,
+    Channel.I_1HOUR: 60,
+    Channel.I_10MIN: 10,
+    Channel.I_MANUAL: 1440
+}
 
 class ChannelFeed(Feed):
-    ttl = 1440 # 60 minutes * 24 hours
+    """Channel feed implementation"""
+    # ttl = 1440 # 60 minutes * 24 hours  TODO: this should
+    def ttl(self, channel):
+        return FEED_TTL[channel.interval]
+
 
     def get_object(self, request, channel_slug):
         return get_object_or_404(Channel, slug=channel_slug)
